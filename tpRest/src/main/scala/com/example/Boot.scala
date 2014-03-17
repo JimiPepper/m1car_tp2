@@ -4,9 +4,7 @@ import akka.actor.{ActorSystem, Props}
 import akka.io.IO
 import spray.can.Http
 
-object Boot extends App 
-{
-
+object Boot extends App {
   // we need an ActorSystem to host our application in
   implicit val system = ActorSystem("on-spray-can")
 

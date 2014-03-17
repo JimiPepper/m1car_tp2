@@ -1,4 +1,4 @@
-organization  := "com.example"
+organization  := "lille1.car3.tpRest"
 
 version       := "0.1"
 
@@ -7,7 +7,8 @@ scalaVersion  := "2.10.3"
 scalacOptions := Seq("-unchecked", "-deprecation", "-encoding", "utf8")
 
 resolvers ++= Seq(
-  "spray repo" at "http://repo.spray.io/"
+  "Spray Repo" at "http://repo.spray.io/",
+  "Typesafe Repository" at "http://repo.typesafe.com/typesafe/releases/"
 )
 
 libraryDependencies ++= {
@@ -17,6 +18,7 @@ libraryDependencies ++= {
     "io.spray"            %   "spray-can"     % sprayV,
     "io.spray"            %   "spray-routing" % sprayV,
     "io.spray"            %   "spray-testkit" % sprayV  % "test",
+    "io.spray"            %   "spray-json"    % "1.2.5",
     "com.typesafe.akka"   %%  "akka-actor"    % akkaV,
     "com.typesafe.akka"   %%  "akka-testkit"  % akkaV   % "test",
     "org.specs2"          %%  "specs2"        % "2.2.3" % "test"
