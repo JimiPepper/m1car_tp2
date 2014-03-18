@@ -1,9 +1,13 @@
 package com.example
 
-import akka.actor.Actor
-import spray.routing._
+import akka.actor.{ Props, Actor }
+import java.io.FileOutputStream
+import java.io.FileOutputStream
 import spray.http._
-import MediaTypes._
+import spray.http.MediaTypes._
+import spray.routing._
+import spray.http.BodyPart
+import java.io.{ ByteArrayInputStream, InputStream, OutputStream, FileOutputStream, FileInputStream }
 
 
 // we don't implement our route structure directly in the service actor because
@@ -17,59 +21,33 @@ class MyServiceActor extends Actor with MyService {
   // this actor only runs our route, but you could add
   // other things here, like request stream processing
   // or timeout handling
+
   def receive = runRoute(myRoute)
 }
 
 
 // this trait defines our service behavior independently from the service actor
-trait MyService extends HttpService
-{
+trait MyService extends HttpService {
 
   val myRoute =
-    path("")
-  {
-    get {
-      respondWithMediaType(`text/html`) { // XML is marshalled to `text/xml` by default, so we simply override here
-        complete {
-          <html>
-          <body>
-          <h1>Say hello to <i>spray-routing</i> on <i>spray-can</i>!</h1>
-          <h1>Hey bitch i'm working on Spray :D</h1>
-          </body>
-          </html>
-        }
-      }
-    }
-  } ~
-  pathPrefix("list")  {
-    path("html")      {
-      get        {
-        respondWithMediaType(`text/html`)          {
-          val list = (0 to 10).toList
-          complete
-          {
-            <html>
-            <body>
-            <ul>
-            <li>Test 1</li>
-            <li>Test 2</li>
-            <li>Test 3</li>
-            <li>Test 4</li>
-            <li>Test 5</li>
-            </ul>
-            </body>
-            </html>
-          }
-        }
+    (path("") & get) { // `text/xml` by default, override to be sure
+      respondWithMediaType(`text/html`) {
+        complete(index)
       }
     } ~
-    path("json")      {
+  path("list") {
+    (path("html") & get) {
+      respondWithMediaType(`text/html`) {
+        complete(<html>Test 1</html>)
+      }
+    } ~
+      (path("json") & get) {
       complete("JSON time")
     }
   } ~
   path("getFile") {
     respondWithMediaType(`application/octet-stream`) {
-      getFromFile("/home/m1/gouzer/toto.jpg")
+      getFromFile("/tmp/toto.jpg")
     }
   } ~
   path("storeFile") {
@@ -77,24 +55,61 @@ trait MyService extends HttpService
       complete(
         <html>
           <h1>File</h1>
-          <form type="post" action="store">
-          <input type="file" value="store" name="file"/>
-          <input type="submit" value="store"/>
-          <input type="hidden" name="_method" value="put"/>
+          <form name="form1" method="post" enctype="multipart/form-data" action="store">
+          <input name="file" type="file"/>
+          <input type="submit" value="submit"/>
           </form>
           </html>
       )
     }
   } ~
-  path("store") {
-    put {
-      // formField("file") { (file) =>
-      complete("put recu")
-      // }
-    } ~
-    get {
-      complete("get recu")
+    (path("store") & post) {
+    formField('file.as[Array[Byte]]) { file =>
+      val fos : FileOutputStream = new FileOutputStream("test_file")
+      try { fos.write(file) }
+      finally { fos.close }
+      complete { "done" }
     }
-
   }
+
+  // fin de la route !
+
+  lazy val index = {
+    <html>
+    <body>
+    <h1>Say hello to <i>spray-routing</i> on <i>spray-can</i>!</h1>
+    <h1>Hey bitch i'm working on Spray :D</h1>
+    </body>
+    </html>
+  }
+
+  private def saveAttachment(fileName: String, content: Array[Byte]): Boolean = {
+    saveAttachment[Array[Byte]](fileName, content, {(is, os) => os.write(is)})
+    true
+  }
+
+  private def saveAttachment(fileName: String, content: InputStream): Boolean = {
+    saveAttachment[InputStream](fileName, content,
+      { (is, os) =>
+        val buffer = new Array[Byte](16384)
+        Iterator
+          .continually (is.read(buffer))
+          .takeWhile (-1 !=)
+          .foreach (read => os.write(buffer,0,read))
+      }
+    )
+  }
+
+  private def saveAttachment[T](fileName: String, content: T, writeFile: (T, OutputStream) => Unit): Boolean = {
+    try {
+      val fos = new FileOutputStream(fileName)
+      writeFile(content, fos)
+      fos.close()
+      true
+    } catch {
+      case _ : Throwable => false
+    }
+  }
+
 }
+// }
