@@ -37,22 +37,25 @@ trait MyService extends HttpService {
         complete(logWebPage_html)
       }
     } ~
-  path("list") {
-    (path("html") & get) {
+  pathPrefix("list") {
+    pathEnd { complete("Use list/html or list/json") } ~
+    path("html") {
+      // TODO to make this list cleaner (vertical listing etc...)
+      val list = listDirectoryContents("/tmp/")
       respondWithMediaType(`text/html`) {
-        listDirectoryContents("/tmp/")
+        list
       }
     } ~
-      (path("json") & get) {
+    path("json") {
       complete("JSON time")
     }
   } ~
-    (path("getFile") & get) {
+    (pathPrefix("getFile") & get) {
     respondWithMediaType(`application/octet-stream`) {
       getFromFile("/tmp/toto.jpg")
     }
   } ~
-    (path("storeFile") & get) {
+    (pathPrefix("storeFile") & get) {
     respondWithMediaType(`text/html`) {
       complete(
         <html>
@@ -65,7 +68,7 @@ trait MyService extends HttpService {
       )
     }
   } ~
-    (path("store") & post) {
+    (pathPrefix("store") & post) {
     entity(as[MultipartFormData]) { formData =>
       val re = """(filename)(=)([-_a-zA-Z0-9]+\.[a-zA-Z0-9]{2,})""".r
       val Some(reg) = re.findFirstMatchIn(formData.toString)
@@ -78,7 +81,7 @@ trait MyService extends HttpService {
         complete { "done" }
       }
     } // ~
-      // path("loginAction")    {
+      // pathPrefix("loginAction")    {
       //   complete("Ok !");
       //redirect("list/html");
       // } ~
