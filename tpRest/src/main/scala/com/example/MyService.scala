@@ -32,44 +32,44 @@ trait MyService extends HttpService {
   val html: Boolean = true
 
   val myRoute =
-  (path("") & get) { // `text/xml` by default, override to be sure
-    respondWithMediaType(`text/html`) {
-      complete(logWebPage_html)
-    }
-  } ~
+    (path("") & get) { // `text/xml` by default, override to be sure
+      respondWithMediaType(`text/html`) {
+        complete(logWebPage_html)
+      }
+    } ~
   path("list") {
     (path("html") & get) {
       respondWithMediaType(`text/html`) {
-        complete(<html>Test 1</html>)
+        listDirectoryContents("/tmp/")
       }
     } ~
-    (path("json") & get) {
+      (path("json") & get) {
       complete("JSON time")
     }
   } ~
-  path("getFile") {
+    (path("getFile") & get) {
     respondWithMediaType(`application/octet-stream`) {
       getFromFile("/tmp/toto.jpg")
     }
   } ~
-  path("storeFile") {
+    (path("storeFile") & get) {
     respondWithMediaType(`text/html`) {
       complete(
         <html>
-        <h1>File</h1>
-        <form name="form1" method="post" enctype="multipart/form-data" action="store">
-        <input name="file" type="file"/>
-        <input type="submit" value="submit"/>
-        </form>
-        </html>
+          <h1>File</h1>
+          <form name="form1" method="post" enctype="multipart/form-data" action="store">
+          <input name="file" type="file"/>
+          <input type="submit" value="submit"/>
+          </form>
+          </html>
       )
     }
   } ~
-  (path("store") & post) ~> check ~> route {
+    (path("store") & post) {
     entity(as[MultipartFormData]) { formData =>
       val re = """(filename)(=)([-_a-zA-Z0-9]+\.[a-zA-Z0-9]{2,})""".r
-      // TODO change substring to something more generic
-      val filename = re.findFirstIn(formData.toString).head.substring(9)
+      val Some(reg) = re.findFirstMatchIn(formData.toString)
+      val filename =  reg.group(3)
 
       formField('file.as[Array[Byte]]) { file =>
         val fos : FileOutputStream = new FileOutputStream(filename)
@@ -78,16 +78,16 @@ trait MyService extends HttpService {
         complete { "done" }
       }
     } // ~
-    // path("loginAction")    {
-    //   complete("Ok !");
-    //redirect("list/html");
-    // } ~
-    // path("changeFormatting")
-    // {
-    // if(html) html = false else html = true ; // redirect
-    // html -> true : on envoie en html
-    // html -> false : on envoie du JSON
-    // }
+      // path("loginAction")    {
+      //   complete("Ok !");
+      //redirect("list/html");
+      // } ~
+      // path("changeFormatting")
+      // {
+      // if(html) html = false else html = true ; // redirect
+      // html -> true : on envoie en html
+      // html -> false : on envoie du JSON
+      // }
   }
   // fin de la route !
 
