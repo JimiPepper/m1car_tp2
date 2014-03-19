@@ -29,6 +29,8 @@ class MyServiceActor extends Actor with MyService {
 // this trait defines our service behavior independently from the service actor
 trait MyService extends HttpService {
 
+	val html: Boolean = true; 
+
   val myRoute =
     (path("") & get) { // `text/xml` by default, override to be sure
       respondWithMediaType(`text/html`) {
@@ -69,16 +71,41 @@ trait MyService extends HttpService {
       try { fos.write(file) }
       finally { fos.close }
       complete { "done" }
-    }
+    } ~
+	path("loginAction")
+	{
+		complete("Ok !");
+		//redirect("list/html");
+	} ~
+	path("changeFormatting")
+	{
+		if(html) html = false else html = true ; // redirect 
+		// html -> true : on envoie en html
+		// html -> false : on envoie du JSON
+	}
   }
 
   // fin de la route !
 
-  lazy val index = {
+  lazy val logWebPage_html = {
     <html>
     <body>
-    <h1>Say hello to <i>spray-routing</i> on <i>spray-can</i>!</h1>
-    <h1>Hey bitch i'm working on Spray :D</h1>
+    <h1>Connexion - FTP</h1>
+
+	<form type="post" action="loginAction">
+    <div>
+	<h3>Serveur FTP</h3>
+	<input type="text" name="ip_server" value="Entrez une adresse IP..." />	
+	<input type="text" name="port_server" value="Entrez un port..." />
+</div>
+
+<div>
+<h3>Utilisateur</h3>
+	<label for="login">Identifiant : </label><input type="text" name="login" id="login" value="Votre identifiant" /><br />
+	<label for="mdp">Mot de passe : </label><input type="password" name="mdp" id="mdp" /><br />
+	<input type="submit" value="Se connecter" />
+</div>
+</form>
     </body>
     </html>
   }
@@ -110,6 +137,28 @@ trait MyService extends HttpService {
       case _ : Throwable => false
     }
   }
+  
+  private def getJSONStringList(s: String): String = 
+  {
+   // val list: List[String] = s.
+null;
+  }
 
 }
 // }
+
+/*
+* Liste des tests à implémenter :
+*	-> Vérifier qu'un utilisateur non-loggué ne puisse pas accéder à l'application (renvoi d'une exception)
+*	-> Si un utilisateur ne fait rien pendant x secondes/minutes, le déconnecter
+*	-> Si un utilisateur non-loggué/connecté tente d'accéder à une page qui n'existe pas (william_est_un_as_d_emacs) renvoyer une exception
+*	-> Si un utilisateur tente de RETR un fichier qui n'existe pas, renvoyer une exception
+*	-> Si l'utilisateur désire afficher une réponse en HTML il ne peut pas avoir une réponse en JSON 
+*	-> Si un utilisateur veut se déplacer dans un enfant du répertoire courant, il le peut
+*	-> Si l'utilisateur veut PUT un fichier sur le serveur sans passer par storeFile, renvoyer une exception
+*	-> Si l'utilisateur souhaite qu'on lui renvoie du html, on lui envoie du html
+*	-> Si l'utilisateur renvoie du JSON, on lui envoie du JSON
+*	-> Quand l'utilisateur se déconnecte, il est bien déconnecté du serveur FTP
+*	-> De manière générale, si le serveur FTP renvoie une code d'erreur, renvoyer une exception (CODE >= 300)
+*	-> 
+*/
