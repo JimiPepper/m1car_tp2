@@ -1,11 +1,11 @@
-package com.example
+package lille1.car3.tpRest
 
 import org.specs2.mutable.Specification
 import spray.testkit.Specs2RouteTest
 import spray.http._
 import StatusCodes._
 
-class MyServiceSpec extends Specification with Specs2RouteTest with MyService {
+class MyServiceSpec extends Specification with Specs2RouteTest with myRoutingService {
   def actorRefFactory = system
 
   "MyService" should {
