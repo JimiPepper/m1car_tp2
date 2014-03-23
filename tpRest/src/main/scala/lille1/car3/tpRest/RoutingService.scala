@@ -57,22 +57,26 @@ trait myRoutingService extends HttpService {
       getFromFile("pics/" + str)
     }
   } ~
-  (pathPrefix("delete") & get) {
+    (pathPrefix("delete") & get) {
     complete("delete")
   } ~
   pathPrefix("store") {
     get { complete(storeForm) } ~
       (path("file") & post) {
       entity(as[MultipartFormData]) { formData =>
-        val re = """(filename)(=)([-_.a-zA-Z0-9]+[.]+[a-zA-Z0-9]{2,})""".r
-        val Some(reg) = re.findFirstMatchIn(formData.toString)
-        val filename =  reg.group(3)
+        val filename = extract(
+          formData.toString,
+          """(filename)(=)([-_.a-zA-Z0-9]+[.]+[a-zA-Z0-9]{2,})""",
+          3)
 
         formField('file.as[Array[Byte]]) { file =>
           val fos : FileOutputStream = new FileOutputStream(filename)
-          try { fos.write(file) }
-          finally { fos.close }
-          complete { "done" }
+          try {
+            fos.write(file)
+          } finally {
+            fos.close
+          }
+          complete { filename + "Successfully uploaded" }
         }
       }
     }
