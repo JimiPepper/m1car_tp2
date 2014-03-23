@@ -78,39 +78,41 @@ trait myRoutingService extends HttpService {
     formFields('server_ip.?, 'server_port.as[Int].?, 'login_user.?, 'mdp_user.?) {
       (ip_opt, port_opt, login_opt, mdp_opt) =>
 
+      // TODO gerer l'ip vide
       val ip = ip_opt match {
-        case Some(value) => value
-        case None =>
-          complete("Failed to find the IP address"); ""
+        case Some(value) if value != "" => value
+        case _ => complete("Failed to find the IP address"); "None"
       }
 
       val port = port_opt match {
-        case Some(value) => value
-        case None =>
-          complete("Failed to find the port"); 0
+        case Some(value) if value != "" => value
+        case _ => complete("Failed to find the port"); 0
       }
 
       val login = login_opt match {
-        case Some(value) => value
-        case None => "anonymous"
+        case Some(value) if value != "" => value
+        case _ => "anonymous"
       }
 
       val mdp = mdp_opt match {
-        case Some(value) => value
-        case None => ""
+        case Some(value) if value != "" => value
+        case _ => "mdp"
       }
 
       val ftp = new FTPClient
-      try { ftp.connect(ip, port) }
-      catch {
+      try {
+        ftp.connect(ip, port)
+      } catch {
         case e: org.apache.commons.net.ftp.FTPConnectionClosedException =>
           complete("FAILED to connect to " + ip + ":" + port + "!")
       }
-      if (! ftp.login(login, mdp)) { ftp.disconnect(); complete("FAILED to login!") }
 
-      // ftp.
-
-      complete("Connexion to " +ip+ ":" +port+" with " + "["+login+"]:["+mdp+"]" + " => successful")
+      if (! ftp.login(login, mdp)) {
+        ftp.disconnect(); complete("FAILED to login!")
+      }
+      else {
+        complete("Connexion to " +ip+ ":" +port+" with " + "["+login+"]:["+mdp+"]" + " => successful")
+      }
     }
   }
   // fin de la route !
