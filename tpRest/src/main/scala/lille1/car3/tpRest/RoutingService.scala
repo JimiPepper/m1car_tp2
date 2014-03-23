@@ -34,6 +34,8 @@ class RoutingService extends Actor with myRoutingService {
 
 // this trait defines our service behavior independently from the service actor
 trait myRoutingService extends HttpService {
+  var curConnexion : FtpConnexion = null
+
   val myRoute =
     (path("") & get) { // `text/xml` by default, override to be sure
       respondWithMediaType(`text/html`) {
@@ -58,7 +60,14 @@ trait myRoutingService extends HttpService {
     }
   } ~
     (pathPrefix("delete") & get) {
-    complete("delete")
+    entity(as[MultipartFormData]) { formData =>
+      val filename = extract(
+        formData.toString,
+        """(filename)(=)([-_.a-zA-Z0-9]+[.]+[a-zA-Z0-9]{2,})""",
+        3)
+      // TODO delete
+      complete("")
+    }
   } ~
   pathPrefix("store") {
     get { complete(storeForm) } ~
@@ -106,16 +115,16 @@ trait myRoutingService extends HttpService {
         case _ => "mdp"
       }
 
-      val ftp = new FTPClient
+      curConnexion = new FtpConnexion
       try {
-        ftp.connect(ip, port)
+        curConnexion.connect(ip, port)
       } catch {
         case e: org.apache.commons.net.ftp.FTPConnectionClosedException =>
           complete("FAILED to connect to " + ip + ":" + port + "!")
       }
 
-      if (! ftp.login(login, mdp)) {
-        ftp.disconnect(); complete("FAILED to login!")
+      if (! curConnexion.login(login, mdp)) {
+        curConnexion.disconnect; complete("FAILED to login!")
       }
       else {
         complete("Connexion to " +ip+ ":" +port+" with " + "["+login+"]:["+mdp+"]" + " => successful")
