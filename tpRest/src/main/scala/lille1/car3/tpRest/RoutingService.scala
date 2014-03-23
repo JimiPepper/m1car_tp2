@@ -38,7 +38,7 @@ trait myRoutingService extends HttpService {
   pathPrefix("list") {
     pathEnd { complete("Use list/html or list/json") } ~
     path("html") {
-      val list = listDirectoryContents("/tmp/")
+      val list = listDirectoryContents("pics/")
       respondWithMediaType(`text/html`) {
         list
       }
@@ -49,7 +49,7 @@ trait myRoutingService extends HttpService {
   } ~
     (pathPrefix("get" / """([-_.a-zA-Z0-9]+[.]+[a-zA-Z0-9]{2,})""".r) & get) { str =>
     respondWithMediaType(`application/octet-stream`) {
-      getFromFile("/tmp/" + str)
+      getFromFile("pics/" + str)
     }
   } ~
   pathPrefix("store") {
