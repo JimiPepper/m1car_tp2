@@ -57,6 +57,9 @@ trait myRoutingService extends HttpService {
       getFromFile("pics/" + str)
     }
   } ~
+  (pathPrefix("delete") & get) {
+    complete("delete")
+  } ~
   pathPrefix("store") {
     get { complete(storeForm) } ~
       (path("file") & post) {
