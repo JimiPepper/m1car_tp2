@@ -1,16 +1,21 @@
 package lille1.car3.tpRest
 
-import akka.actor.{ Props, Actor }
-import java.io.FileOutputStream
-import java.io.FileOutputStream
-import org.apache.commons.net.ftp._
-import scala.util.matching.Regex
-import spray.http._
-import spray.http.MediaTypes._
-import spray.routing._
-import spray.http.BodyPart
 import java.io.{ ByteArrayInputStream, InputStream, OutputStream, FileOutputStream, FileInputStream }
 
+import scala.util.matching.Regex
+
+import org.apache.commons.net.ftp._
+
+import akka.actor.{ Props, Actor }
+
+import spray.http._
+import spray.http.MediaTypes._
+import spray.httpx.unmarshalling.DeserializationError
+import spray.routing._
+import spray.http.BodyPart
+import spray.json._
+
+import DefaultJsonProtocol._
 
 // we don't implement our route structure directly in the service actor because
 // we want to be able to test it independently, without having to spin up an actor
@@ -102,66 +107,61 @@ trait myRoutingService extends HttpService {
   // fin de la route !
 
   def extract(text: String, regex: String, idx: Int) : String = {
-        val Some(reg) = regex.r.findFirstMatchIn(text)
+    val Some(reg) = regex.r.findFirstMatchIn(text)
     reg.group(idx)
   }
 
-  // private def getJSONStringList(s: String): String = {
-  // val list: List[String] = s
-  // }
+  /* OVERRIDE OBJECTS */
+  object MyJsonProtocol extends DefaultJsonProtocol {
+    // on ajoute le type List[Map, Map] au types de bases supporté par Spray pouvant être sérialisé au format JSON
+    implicit object MyJsonFormat extends RootJsonFormat[List[Map[String, String]]] {
+      def returnJSONElement() : JsObject = JsObject("filename" -> JsString("Ta mere encule"), "chiffre" -> JsNumber(10))
+      def write(list: List[Map[String, String]]) = {
+        JsArray(list.map(elem => returnJSONElement))
+      }
 
-  // /* OVERRIDE OBJECTS */
-  // object MyJsonProtocol extends DefaultJsonProtocol {
-  //   // on ajoute le type List[Map, Map] au types de bases supporté par Spray pouvant être sérialisé au format JSON
-  //   implicit object MyJsonFormat extends RootJsonFormat[List[Map[String, String]]] {
-  //     def returnJSONElement() : JsObject = JsObject("filename" -> JsString("Ta mere encule"), "chiffre" -> JsNumber(10))
-  //     def write(list: List[Map[String, String]]) = {
-  //       JsArray(list.map(elem => returnJSONElement))
-  //     }
+      def read(value: JsValue): List[Map[String, String]] = value match {
+        case JsArray(content) => {
+          var responseJSON : List[Map[String, String]] = List[Map[String, String]]()
+          var map : Map[String, String] = Map[String, String]()
 
-  //     def read(value: JsValue): List[Map[String, String]] = value match {
-  //         case JsArray(content) => {
-  //             var responseJSON : List[Map[String, String]] = List[Map[String, String]]()
-  //             var map : Map[String, String] = Map[String, String]()
+          for(JSON_elem <- content) {
+            JSON_elem.asJsObject.getFields("filename", "chiffre") match {
+              case Seq(JsString(filename), JsNumber(chiffre)) => map + ("filename" -> filename)
+              case _ => deserializationError("Erreur de formatage ~ le JSON attendu ne correspnd au format List[Map[String, String]]")
+            }
 
-  //             for(JSON_elem <- content) {
-  //               JSON_elem.asJsObject.getFields("filename", "chiffre") match {
-  //                 case Seq(JsString(filename), JsNumber(chiffre)) => map + ("filename" -> filename)
-  //                 case _ => deserializationError("Erreur de formatage ~ le JSON attendu ne correspnd au format List[Map[String, String]]")
-  //               }
+            responseJSON = map :: responseJSON
+            /* ... */
+            map = Map[String, String]()
+          }
 
-  //               responseJSON = map :: responseJSON
-  //               /* ... */
-  //               map = Map[String, String]()
-  //             }
+          responseJSON
+        }
+        case _ => DeserializationError("List[Map[String, String]] attendu")
+      }
+    }
+  }
 
-  //             responseJSON
-  //           }
-  //         case _ => deserializationError("List[Map[String, String]] attendu")
-  //       }
-  //   }
-  // }
+  import MyJsonProtocol._
 
-  // import MyJsonProtocol._
+  /* HELPERS FUNCTIONS */
+  def JSON_ListResponse(files: Array[FTPFile]) : HttpResponse = {
+    var responseJSON : List[Map[String, String]] = List[Map[String, String]]()
+    var map : Map[String, String] = Map[String, String]()
 
+    for(f <- files) {
+      map + ("filename" -> f.getName())
+      responseJSON = map :: responseJSON
+      /* ... */
+      map = Map[String, String]()
+    }
 
-  // /* HELPERS FUNCTIONS */
-  // def JSON_ListResponse(files: Array[FTPFile]) : HttpResponse = {
-  //   var responseJSON : List[Map[String, String]] = List[Map[String, String]]()
-  //   var map : Map[String, String] = Map[String, String]()
-
-  //   for(f <- files) {
-  //     map + ("filename" -> f.getName())
-  //     responseJSON = map :: responseJSON
-  //     /* ... */
-  //     map = Map[String, String]()
-  //   }
-
-  //   HttpResponse(
-  //     status = 200,
-  // entity = HttpEntity(`text/html`, responseJSON.toJson.toString)
-  //   )
-  // }
+    HttpResponse(
+      status = 200,
+      entity = HttpEntity(`text/html`, responseJSON.toJson.toString)
+    )
+  }
 
   def HTML_ListResponse(files: Array[FTPFile]) : HttpResponse = {
     var responseHTML = new String("<html><head><title>Commande LIST - HTML</title></head><body><h1>Commande LIST FTP - Version HTML</h1><ul>")
