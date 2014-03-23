@@ -32,7 +32,7 @@ trait myRoutingService extends HttpService {
   val myRoute =
     (path("") & get) { // `text/xml` by default, override to be sure
       respondWithMediaType(`text/html`) {
-        complete(logWebPage_html)
+        complete(loginForm)
       }
     } ~
   pathPrefix("list") {
@@ -68,8 +68,43 @@ trait myRoutingService extends HttpService {
         }
       }
     }
+  } ~
+    (pathPrefix("loginAction") & post) {
+    formFields('server_ip, 'server_port.as[Int], 'login_user.?, 'mdp_user.?) {
+      (ip, port, login_opt, mdp_opt) =>
+
+      var login = ""
+      var mdp = ""
+
+      login_opt match {
+        case Some(value) => (login = value)
+        case None => (login = "anonymous")
+      }
+
+      mdp_opt match {
+        case Some(value) => (mdp = value)
+        case None => (mdp = "")
+      }
+
+      val ftp = new FTPClient
+      try { ftp.connect(ip, port) }
+      catch {
+        case e: org.apache.commons.net.ftp.FTPConnectionClosedException =>
+          complete("FAILED to connect to " + ip + ":" + port + "!")
+      }
+      if (! ftp.login(login, mdp)) { ftp.disconnect(); complete("FAILED to login!") }
+
+      // ftp.
+
+      complete("Connexion to " +ip+ ":" +port+" with " + "["+login+"]:["+mdp+"]" + " => successful")
+    }
   }
   // fin de la route !
+
+  def extract(text: String, regex: String, idx: Int) : String = {
+        val Some(reg) = regex.r.findFirstMatchIn(text)
+    reg.group(idx)
+  }
 
   // private def getJSONStringList(s: String): String = {
   // val list: List[String] = s
@@ -109,8 +144,6 @@ trait myRoutingService extends HttpService {
 
   // import MyJsonProtocol._
 
-  /* USEFUL VALUES */
-  val regexMatchFileName = new Regex("(filename)(=)\"([-_a-zA-Z0-9]+\\.[a-zA-Z0-9]{2,})\"")
 
   // /* HELPERS FUNCTIONS */
   // def JSON_ListResponse(files: Array[FTPFile]) : HttpResponse = {
@@ -141,30 +174,6 @@ trait myRoutingService extends HttpService {
     )
   }
 
-  /* HELPERS HTML */
-  lazy val logWebPage_html = {
-    <html>
-    <body>
-    <h1>Connexion - FTP</h1>
-
-    <form method="post" action="loginAction">
-    <div>
-    <h3>Serveur FTP</h3>
-    <input type="text" name="ip_server" value="Entrez une adresse IP..." />
-    <input type="text" name="port_server" value="Entrez un port..." />
-    </div>
-
-    <div>
-    <h3>Utilisateur</h3>
-    <label for="login">Identifiant : </label><input type="text" name="login" id="login" value="Votre identifiant" /><br />
-    <label for="mdp">Mot de passe : </label><input type="password" name="mdp" id="mdp" /><br />
-    <input type="submit" value="Se connecter" />
-    </div>
-    </form>
-    </body>
-    </html>
-  }
-
   lazy val loginForm = HttpResponse(
     entity = HttpEntity(`text/html`,
       <html>
@@ -174,17 +183,17 @@ trait myRoutingService extends HttpService {
         <body>
         <h1>Connexion - FTP</h1>
 
-      <form name="loginForm" method="post" action="#">
+      <form name="loginForm" method="post" action="store/file">
         <div>
         <h3>Serveur FTP</h3>
-        <label for="server_ip">IP : </label><input type="text" name="server_ip" value="Entrez une adresse IP..." id="server_ip" />
-        <label for="server_port">Port : </label><input type="text" name="serverport" value="Entrez un port..."  for="server_port"/>
+        <label for="server_ip">IP : </label><input type="text" name="server_ip"/>
+        <label for="server_port">Port : </label><input type="text" name="server_port"/>
         </div>
 
       <div>
         <h3>Utilisateur</h3>
-        <label for="login">Identifiant : </label><input type="text" name="login_user" id="login" value="Votre identifiant" /><br />
-        <label for="mdp">Mot de passe : </label><input type="password" name="mdp_user" id="mdp" /><br />
+        <label for="login">Identifiant : </label><input type="text" name="login_user"/><br/>
+        <label for="mdp">Mot de passe : </label><input type="password" name="mdp_user"/><br/>
         <input type="submit" value="Se connecter" />
         </div>
         </form>

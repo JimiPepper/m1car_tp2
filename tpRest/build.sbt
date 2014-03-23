@@ -8,10 +8,9 @@ scalacOptions := Seq("-unchecked", "-deprecation", "-encoding", "utf8")
 
 resolvers ++= Seq(
   "Spray Repo" at "http://repo.spray.io/",
-  "Typesafe Repository" at "http://repo.typesafe.com/typesafe/releases/"
+  "Typesafe Repository" at "http://repo.typesafe.com/typesafe/releases/",
+  "spray-json-resolver-0" at "http://repo.spray.cc"
 )
-
-// "io.spray"            %   "spray-json"    % "1.2.5",
 
 libraryDependencies ++= {
   val akkaV = "2.1.4"
@@ -20,6 +19,7 @@ libraryDependencies ++= {
     "io.spray"            %   "spray-can"     % sprayV,
     "io.spray"            %   "spray-routing" % sprayV,
     "io.spray"            %   "spray-testkit" % sprayV  % "test",
+    "cc.spray"            %   "spray-json"    % "1.1.1",
     "com.typesafe.akka"   %%  "akka-actor"    % akkaV,
     "com.typesafe.akka"   %%  "akka-testkit"  % akkaV   % "test",
     "org.specs2"          %%  "specs2"        % "2.2.3" % "test"
