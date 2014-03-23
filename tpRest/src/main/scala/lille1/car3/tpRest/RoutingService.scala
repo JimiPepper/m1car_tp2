@@ -75,20 +75,29 @@ trait myRoutingService extends HttpService {
     }
   } ~
     (pathPrefix("loginAction") & post) {
-    formFields('server_ip, 'server_port.as[Int], 'login_user.?, 'mdp_user.?) {
-      (ip, port, login_opt, mdp_opt) =>
+    formFields('server_ip.?, 'server_port.as[Int].?, 'login_user.?, 'mdp_user.?) {
+      (ip_opt, port_opt, login_opt, mdp_opt) =>
 
-      var login = ""
-      var mdp = ""
-
-      login_opt match {
-        case Some(value) => (login = value)
-        case None => (login = "anonymous")
+      val ip = ip_opt match {
+        case Some(value) => value
+        case None =>
+          complete("Failed to find the IP address"); ""
       }
 
-      mdp_opt match {
-        case Some(value) => (mdp = value)
-        case None => (mdp = "")
+      val port = port_opt match {
+        case Some(value) => value
+        case None =>
+          complete("Failed to find the port"); 0
+      }
+
+      val login = login_opt match {
+        case Some(value) => value
+        case None => "anonymous"
+      }
+
+      val mdp = mdp_opt match {
+        case Some(value) => value
+        case None => ""
       }
 
       val ftp = new FTPClient
@@ -138,7 +147,7 @@ trait myRoutingService extends HttpService {
 
           responseJSON
         }
-        case _ => DeserializationError("List[Map[String, String]] attendu")
+        case _ => deserializationError("List[Map[String, String]] attendu")
       }
     }
   }
@@ -183,7 +192,7 @@ trait myRoutingService extends HttpService {
         <body>
         <h1>Connexion - FTP</h1>
 
-      <form name="loginForm" method="post" action="store/file">
+      <form name="loginForm" method="post" action="loginAction">
         <div>
         <h3>Serveur FTP</h3>
         <label for="server_ip">IP : </label><input type="text" name="server_ip"/>
