@@ -27,7 +27,6 @@ class RoutingService extends Actor with myRoutingService {
   def receive = runRoute(myRoute)
 }
 
-
 // this trait defines our service behavior independently from the service actor
 trait myRoutingService extends HttpService {
   val myRoute =
@@ -48,17 +47,16 @@ trait myRoutingService extends HttpService {
       complete("JSON time")
     }
   } ~
-    (pathPrefix("download") & get) {
+    (pathPrefix("get" / """([-_.a-zA-Z0-9]+[.]+[a-zA-Z0-9]{2,})""".r) & get) { str =>
     respondWithMediaType(`application/octet-stream`) {
-      // TODO recup dynamique filename
-      getFromFile("/tmp/bullshit.jpg")
+      getFromFile("/tmp/" + str)
     }
   } ~
   pathPrefix("store") {
     get { complete(storeForm) } ~
       (path("file") & post) {
       entity(as[MultipartFormData]) { formData =>
-        val re = """(filename)(=)([-_a-zA-Z0-9]+\.[a-zA-Z0-9]{2,})""".r
+        val re = """(filename)(=)([-_.a-zA-Z0-9]+[.]+[a-zA-Z0-9]{2,})""".r
         val Some(reg) = re.findFirstMatchIn(formData.toString)
         val filename =  reg.group(3)
 
@@ -74,8 +72,7 @@ trait myRoutingService extends HttpService {
   // fin de la route !
 
   // private def getJSONStringList(s: String): String = {
-  // val list: List[String] = s.
-  // null;
+  // val list: List[String] = s
   // }
 
   // /* OVERRIDE OBJECTS */
