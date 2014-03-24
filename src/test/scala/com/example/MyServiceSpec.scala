@@ -5,26 +5,26 @@ import spray.testkit.Specs2RouteTest
 import spray.http._
 import StatusCodes._
 
-class MyServiceSpec extends Specification with Specs2RouteTest with myRoutingService {
+class MyServiceSpec extends Specification with Specs2RouteTest with RoutingService {
   def actorRefFactory = system
 
   "MyService" should {
 
     "return a greeting for GET requests to the root path" in {
-      Get() ~> myRoute ~> check {
+      Get() ~> default_route ~> check {
         responseAs[String] must contain("Say hello")
       }
     }
 
     "leave GET requests to other paths unhandled" in {
-      Get("/kermit") ~> myRoute ~> check {
+      Get("/kermit") ~> default_route ~> check {
         handled must beFalse
       }
     }
 
     // TODO check the Put()
     "return a MethodNotAllowed error for PUT requests to the root path" in {
-      Put() ~> sealRoute(myRoute) ~> check {
+      Put() ~> sealRoute(default_route) ~> check {
         status === MethodNotAllowed
         responseAs[String] === "HTTP method not allowed, supported methods: GET"
       }

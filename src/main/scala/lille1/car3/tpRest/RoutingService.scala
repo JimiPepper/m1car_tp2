@@ -1,5 +1,8 @@
 package lille1.car3.tpRest
 
+import java.io.File
+import java.io.File
+import java.io.FileInputStream
 import java.io.{ ByteArrayInputStream, InputStream, OutputStream, FileOutputStream, FileInputStream }
 
 import scala.util.matching.Regex
@@ -29,14 +32,14 @@ class RoutingActor extends Actor with RoutingService {
   // other things here, like request stream processing
   // or timeout handling
 
-  def receive = runRoute(myRoute)
+  def receive = runRoute(default_route)
 }
 
 // this trait defines our service behavior independently from the service actor
 trait RoutingService extends HttpService {
-  var curConnexion : FtpConnexion = null
+  var current_connexion : Option[FtpConnexion] = None
 
-  val myRoute =
+  val default_route =
     (path("") & get) { // `text/xml` by default, override to be sure
       respondWithMediaType(`text/html`) {
         complete(loginForm)
@@ -49,33 +52,63 @@ trait RoutingService extends HttpService {
       respondWithMediaType(`text/html`) {
         list
       }
-     /**
-      * TODO : En attente de l'authentification & Gestion couche FTP
-      * complete(HTML_ListResponse(client.listFiles)
-      */
+      /**
+        * TODO : En attente de l'authentification & Gestion couche FTP
+        * complete(HTML_ListResponse(client.listFiles)
+        */
     } ~
     path("json") {
       complete("JSON time")
-   /**
-      * TODO : En attente de l'authentification & Gestion couche FTP
-      * complete(JSON_ListResponse(client.listFiles)
-      */
+      /**
+        * TODO : En attente de l'authentification & Gestion couche FTP
+        * complete(JSON_ListResponse(client.listFiles)
+        */
     }
   } ~
-    (path("get" / """([-_.a-zA-Z0-9]+[.]+[a-zA-Z0-9]{2,})""".r) & get) { str =>
-    respondWithMediaType(`application/octet-stream`) {
-      getFromFile("pics/" + str)
+    (path("get" / """([-_.a-zA-Z0-9]+[.]+[a-zA-Z0-9]{2,})""".r) & get) { filename =>
+    val file = File.createTempFile(filename, null)
+
+    // TODO better handling for connexions ! Does it need a proper authentification ?
+    val t : Option[FtpConnexion] = Some(new FtpConnexion)
+    val Some(cl) = t
+    cl.connect("localhost", 21)
+    cl.login("ftptest", "test")
+
+    t match {
+      case Some(client) =>
+        if (client.download(filename, new FileOutputStream(file))) {
+          respondWithMediaType(`application/octet-stream`) {
+            getFromFile(file)
+          }
+        } else {
+          complete{"Failed to download " + filename}
+        }
+      case None => complete{"Failed to retrieve FTP connexion, please relog"}
     }
+
   } ~
-    (path("delete") & get) {
-    entity(as[MultipartFormData]) { formData =>
-      val filename = extract(
-        formData.toString,
-        """(filename)(=)([-_.a-zA-Z0-9]+[.]+[a-zA-Z0-9]{2,})""",
-        3)
-      // TODO delete
-      complete("")
+    (path("delete" / """([-_.a-zA-Z0-9]+[.]+[a-zA-Z0-9]{2,})""".r) & get) { filename =>
+
+    // TODO better handling for connexions ! Does it need a proper authentification ?
+    val t : Option[FtpConnexion] = Some(new FtpConnexion)
+    val Some(cl) = t
+    cl.connect("localhost", 21)
+    cl.login("ftptest", "test")
+
+    t match {
+
+      case Some(client) =>
+        // TODO ftpPath + filename
+        if (client.delete(filename)) {
+          complete{filename + " sucessfully deleted!"}
+        } else {
+          complete{"Failed to delete " + filename}
+        }
+      case None => complete{"Failed to retrieve FTP connexion, please relog"}
     }
+
+    complete("Delete, done")
+    // }
   } ~
   pathPrefix("store") {
     get { complete(storeForm) } ~
@@ -87,13 +120,36 @@ trait RoutingService extends HttpService {
           3)
 
         formField('file.as[Array[Byte]]) { file =>
-          val fos : FileOutputStream = new FileOutputStream(filename)
-          try {
-            fos.write(file)
-          } finally {
-            fos.close
+          val temp_file = File.createTempFile(filename, null)
+          val fos = new FileOutputStream(temp_file)
+          try { fos.write(file) }
+          catch {
+            case e : java.io.IOException =>
+              println("Failed to retrieve file")
+              complete("Failed to retrieve file")
           }
-          complete { filename + "Successfully uploaded" }
+          finally { fos.close() }
+
+          // TODO better handling for connexions ! Does it need a proper authentification ?
+          val t : Option[FtpConnexion] = Some(new FtpConnexion)
+          val Some(cl) = t
+          cl.connect("localhost", 21)
+          cl.login("ftptest", "test")
+
+          t match {
+            case Some(client) =>
+              // TODO 1st arg: ftpPath + filename
+              // TODO fos: current dir + filename
+
+              if (client.upload(filename, new FileInputStream(temp_file))) {
+                complete{filename + " sucessfully uploaded!"}
+              } else {
+                complete{"Failed to upload " + filename}
+              }
+            case None => complete{"Failed to retrieve FTP connexion, please relog"}
+          }
+
+          complete { filename + " Successfully uploaded" }
         }
       }
     }
@@ -123,20 +179,30 @@ trait RoutingService extends HttpService {
         case _ => "mdp"
       }
 
-      curConnexion = new FtpConnexion
+      val current_connexion = new FtpConnexion
       try {
-        curConnexion.connect(ip, port)
+        current_connexion.connect(ip, port)
       } catch {
         case e: org.apache.commons.net.ftp.FTPConnectionClosedException =>
           complete("FAILED to connect to " + ip + ":" + port + "!")
+        case f: java.io.IOException =>
+          complete("FAILED to connect to " + ip + ":" + port + "!")
       }
 
-      if (! curConnexion.login(login, mdp)) {
-        curConnexion.disconnect; complete("FAILED to login!")
+      if (! current_connexion.login(login, mdp)) {
+        current_connexion.disconnect; complete("FAILED to login!")
       }
-      else {
-        complete("Connexion to " +ip+ ":" +port+" with " + "["+login+"]:["+mdp+"]" + " => successful")
+      complete {
+        "Connexion to " +ip+ ":" +port+" with " + "["+login+"]:["+mdp+"]" + " => successful"
+        // HttpResponse(
+        //   status = redirectionType,
+        //   headers = Location(uri) :: Nil,
+        //   entity = redirectionType.htmlTemplate match {
+        //     case ""       ⇒ HttpEntity.Empty
+        //     case template ⇒ HttpEntity(`text/html`, template format uri)
+        //   })
       }
+
     }
   }
   // fin de la route !

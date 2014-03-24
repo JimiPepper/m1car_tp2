@@ -22,9 +22,9 @@ class FtpConnexion {
   @throws[java.io.IOException]("The login/mdp doesn't exist")
   def login(login: String, mdp: String) : Boolean = {
     if (client.login(login, mdp)) {
-      client.pasv
+      // client.pasv
       client.setFileType(FTP.BINARY_FILE_TYPE)
-      client.enterLocalPassiveMode
+      // client.enterLocalPassiveMode
       connected = true
     }
     connected
@@ -48,7 +48,7 @@ class FtpConnexion {
   }
 
   @throws[java.io.IOException]("The file doesn't exist")
-  def retrieve(file: String, fos: FileOutputStream) : Boolean = {
+  def download(file: String, fos: FileOutputStream) : Boolean = {
     client.retrieveFile(file, fos)
   }
 
