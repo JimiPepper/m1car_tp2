@@ -63,14 +63,19 @@ Conversion JSON
 ===============
 
 La conversion JSON est très simple avec `Spray` et nécessite très peu de code pour être fonctionnel :
-<!--- pour faire apparaitre du code, il faut indenter la première -->
-<!--ligne de 4 espaces, regarder la Cheatsheet pour plus d'info-->
+<!-- Cheatsheet pour des infos sur le formatage du code sur -->
+<!-- markdown/github -->
 
+```scala
     def returnJSONElement() : JsObject = JsObject("filename" -> JsString("toto"),
                                                    "chiffre" -> JsNumber(10))
+```
 
+```scala
     def write(list: List[Map[String, String]]) = JsArray(list.map(elem => returnJSONElement))
+```
 
+```scala
     def JSON_ListResponse(files: Array[FTPFile]) : String = {
       var responseJSON : List[Map[String, String]] = List[Map[String, String]]()
       var map : Map[String, String] = Map[String, String]()
@@ -82,3 +87,4 @@ La conversion JSON est très simple avec `Spray` et nécessite très peu de code
       }
       responseJSON.toJson.toString
     }
+```
