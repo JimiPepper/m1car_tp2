@@ -67,12 +67,16 @@ La conversion JSON est très simple avec `Spray` et nécessite très peu de code
 <!-- markdown/github -->
 
 ```scala
-    def returnJSONElement() : JsObject = JsObject("filename" -> JsString("toto"),
-                                                   "chiffre" -> JsNumber(10))
+    def returnJSONElement() : JsObject = {
+	  JsObject("filename" -> JsString("toto"),
+	            "chiffre" -> JsNumber(10))
+	}
 ```
 
 ```scala
-    def write(list: List[Map[String, String]]) = JsArray(list.map(elem => returnJSONElement))
+    def write(list: List[Map[String, String]]) = {
+	  JsArray(list.map(elem => returnJSONElement))
+	}
 ```
 
 ```scala
