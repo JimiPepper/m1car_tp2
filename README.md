@@ -60,23 +60,23 @@ Conversion JSON
 ===============
 
 La conversion JSON est très simple avec `Spray` et nécessite très peu de code pour être fonctionnel :
+<!---
+Pour faire apparaitre du code, il faut indenter la première ligne de 4 espaces
+--->
 
-def returnJSONElement() : JsObject = JsObject("filename" -> JsString("toto"),
-                                               "chiffre" -> JsNumber(10))
+    def returnJSONElement() : JsObject = JsObject("filename" -> JsString("toto"),
+                                                   "chiffre" -> JsNumber(10))
 
-def write(list: List[Map[String, String]]) = JsArray(list.map(elem => returnJSONElement))
+    def write(list: List[Map[String, String]]) = JsArray(list.map(elem => returnJSONElement))
 
-def JSON_ListResponse(files: Array[FTPFile]) : String = {
-  var responseJSON : List[Map[String, String]] = List[Map[String, String]]()
-  var map : Map[String, String] = Map[String, String]()
-
-  for(f <- files) {
-    map + ("filename" -> f.getName())
-    responseJSON = map :: responseJSON
-    /* ... */
-    map = Map[String, String]()
-  }
-
-  responseJSON.toJson.toString
-}
-`
+    def JSON_ListResponse(files: Array[FTPFile]) : String = {
+      var responseJSON : List[Map[String, String]] = List[Map[String, String]]()
+      var map : Map[String, String] = Map[String, String]()
+        for(f <- files) {
+          map + ("filename" -> f.getName())
+          responseJSON = map :: responseJSON
+          /* ... */
+          map = Map[String, String]()
+      }
+      responseJSON.toJson.toString
+    }
