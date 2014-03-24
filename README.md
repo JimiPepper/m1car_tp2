@@ -1,4 +1,5 @@
-m1car_tp2
-=========
+TP2 Rest
+========
 
-TP Restful
+
+Scala + Spray
