@@ -1,3 +1,6 @@
+<!-- Cheatsheet, everything you need to know about markdown format : -->
+<!-- https://github.com/adam-p/markdown-here/wiki/Markdown-Here-Cheatsheet#code -->
+
 * w.gouzer
 * r.philippon
 
@@ -60,9 +63,8 @@ Conversion JSON
 ===============
 
 La conversion JSON est très simple avec `Spray` et nécessite très peu de code pour être fonctionnel :
-<!---
-Pour faire apparaitre du code, il faut indenter la première ligne de 4 espaces
---->
+<!--- pour faire apparaitre du code, il faut indenter la première -->
+<!--ligne de 4 espaces, regarder la Cheatsheet pour plus d'info-->
 
     def returnJSONElement() : JsObject = JsObject("filename" -> JsString("toto"),
                                                    "chiffre" -> JsNumber(10))
