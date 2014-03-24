@@ -19,7 +19,7 @@ import DefaultJsonProtocol._
 
 // we don't implement our route structure directly in the service actor because
 // we want to be able to test it independently, without having to spin up an actor
-class RoutingService extends Actor with myRoutingService {
+class RoutingActor extends Actor with RoutingService {
 
   // the HttpService trait defines only one abstract member, which
   // connects the services environment to the enclosing actor or test
@@ -33,7 +33,7 @@ class RoutingService extends Actor with myRoutingService {
 }
 
 // this trait defines our service behavior independently from the service actor
-trait myRoutingService extends HttpService {
+trait RoutingService extends HttpService {
   var curConnexion : FtpConnexion = null
 
   val myRoute =
@@ -49,17 +49,25 @@ trait myRoutingService extends HttpService {
       respondWithMediaType(`text/html`) {
         list
       }
+     /**
+      * TODO : En attente de l'authentification & Gestion couche FTP
+      * complete(HTML_ListResponse(client.listFiles)
+      */
     } ~
     path("json") {
       complete("JSON time")
+   /**
+      * TODO : En attente de l'authentification & Gestion couche FTP
+      * complete(JSON_ListResponse(client.listFiles)
+      */
     }
   } ~
-    (pathPrefix("get" / """([-_.a-zA-Z0-9]+[.]+[a-zA-Z0-9]{2,})""".r) & get) { str =>
+    (path("get" / """([-_.a-zA-Z0-9]+[.]+[a-zA-Z0-9]{2,})""".r) & get) { str =>
     respondWithMediaType(`application/octet-stream`) {
       getFromFile("pics/" + str)
     }
   } ~
-    (pathPrefix("delete") & get) {
+    (path("delete") & get) {
     entity(as[MultipartFormData]) { formData =>
       val filename = extract(
         formData.toString,
@@ -90,7 +98,7 @@ trait myRoutingService extends HttpService {
       }
     }
   } ~
-    (pathPrefix("loginAction") & post) {
+    (path("loginAction") & post) {
     formFields('server_ip.?, 'server_port.as[Int].?, 'login_user.?, 'mdp_user.?) {
       (ip_opt, port_opt, login_opt, mdp_opt) =>
 

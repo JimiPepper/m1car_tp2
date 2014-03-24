@@ -5,13 +5,12 @@ import akka.io.IO
 import spray.can.Http
 
 object Boot extends App {
-  // we need an ActorSystem to host our application in
-  // implicit val system = ActorSystem("on-spray-can")
+  // Création d'un acteur akka pour gérer le serveur Spray
   implicit val system = ActorSystem()
 
-  // create and start our service actor
-  val handler = system.actorOf(Props[RoutingService], name = "handler")
+  // Démarrage du serveur sur l'acteur RoutingActor qui se charge de récupérer les réponses HTTP
+  val handler = system.actorOf(Props[RoutingActor], name = "handler")
 
-  // start a new HTTP server on port 8080 with our service actor as the handler
+  // Lancement d'un nouveau serveur HTTP sur le port 8080 sur l'acteur RoutingActor
   IO(Http) ! Http.Bind(handler, interface = "localhost", port = 8080)
 }
