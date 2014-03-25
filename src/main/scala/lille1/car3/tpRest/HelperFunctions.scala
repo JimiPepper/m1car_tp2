@@ -33,8 +33,14 @@ trait HelperFunction extends DefaultJsonProtocol {
   }
 
   def HTML_ListResponse(files: Array[FTPFile]) : HttpResponse = {
-    var responseHTML = new String("<html><head><title>Commande LIST - HTML</title></head><body><h1>Commande LIST FTP - Version HTML</h1><ul>")
-    for(f <- files) responseHTML += "<li>"+ f.getName() +"</li>"
+    var responseHTML = new String("""<html><head><title>Commande LIST - HTML</title></head><body><h1>Commande LIST FTP - Version HTML</h1><ul style="list-style: none;">""")
+    for(f <- files) {
+      if (f.isDirectory) {
+        responseHTML += "<li><b><a href='" + f.getLink() + "'>" + f.getName() + "/</a></b></li>"
+      } else {
+        responseHTML += "<li><a href='" + f.getLink() + "'>" + f.getName() + "</a></li>"
+      }
+    }
     responseHTML += "</ul></body></html>"
 
     HttpResponse(
