@@ -102,15 +102,22 @@ trait RoutingService extends HttpService with HelperHtml with HelperFunction wit
 
       connexion.connect
       validate(connexion.login, "Vous devez être authentifié pour accéder à ces fonctionnalités") {
-        if (connexion.download(filename, new FileOutputStream(file))) {
-          respondWithMediaType(`application/octet-stream`) {
-            getFromFile(file)
-          }
-        }
-        else {
-          complete("Failed to retrieve " + filename)
-        }
+        // connexion.download(filename, new FileOutputStream(file)) match {
+        //   case true =>
+        //     respondWithMediaType(`application/octet-stream`) { getFromFile(file) }
+        //   // complete("true")
+        //   case false => complete("false")
+        // }
+        complete(filename + " succesfully downloaded")
       }
+
+      connexion.download(filename, new FileOutputStream(file)) match {
+        case true =>
+          respondWithMediaType(`application/octet-stream`) { getFromFile(file) }
+        // complete("true")
+        case false => complete("false")
+      }
+
     }
 
   } ~
@@ -121,13 +128,17 @@ trait RoutingService extends HttpService with HelperHtml with HelperFunction wit
 
       connexion.connect
       validate(connexion.login, "Vous devez être authentifié pour accéder à ces fonctionnalités") {
-        if (connexion.delete(filename)) {
-          complete(filename + " successfully deleted")
-        }
-        else {
-          complete("Cannot delete " + filename)
-        }
+        // connexion.delete(filename) match {
+        //   case true => complete("true")
+        //   case false => complete("false")
+        // }
+        complete("do")
       }
+      connexion.delete(filename) match {
+        case true => complete("true")
+        case false => complete("false")
+      }
+
     }
 
   } ~
@@ -165,10 +176,9 @@ trait RoutingService extends HttpService with HelperHtml with HelperFunction wit
               }
               finally { fos.close() }
 
-              if (connexion.upload(filename, new FileInputStream(temp_file))) {
-                complete(storeDoneMessage)
-              } else {
-                complete("Failed to store " + filename)
+              connexion.upload(filename, new FileInputStream(temp_file)) match {
+                case true => complete(storeDoneMessage)
+                case false => complete("Failed to store " + filename)
               }
             }
           }
