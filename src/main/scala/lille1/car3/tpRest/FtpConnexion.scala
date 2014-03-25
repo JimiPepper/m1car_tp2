@@ -5,13 +5,17 @@ import java.io.InputStream
 import org.apache.commons.net.ftp._
 import scala.throws
 
-class FtpConnexion {
+class FtpConnexion(userLogin: String, userMdp: String, serverAddress: String, serverPort: Int) {
+  override def toString = s"FtpConnexion($userLogin, $userMdp, $serverAddress, $serverPort)"
+
+  def info : String = userLogin + "_" + userMdp + "_" + serverAddress + "_" + serverPort.toString
+
   var client = new FTPClient
   var connected: Boolean = false
 
   @throws[java.io.IOException]("The ip/port doesn't exist")
-  def connect(ip: String, port: Int) : Unit = {
-    client.connect(ip, port)
+    def connect : Unit = {
+    client.connect(serverAddress, serverPort)
   }
 
   @throws[java.io.IOException]("Already disconnected")
@@ -20,14 +24,12 @@ class FtpConnexion {
   }
 
   @throws[java.io.IOException]("The login/mdp doesn't exist")
-  def login(login: String, mdp: String) : Boolean = {
-    if (client.login(login, mdp)) {
-      // client.pasv
+  def login : Boolean = {
+    if (client.login(userLogin, userMdp)) {
       client.setFileType(FTP.BINARY_FILE_TYPE)
-      // client.enterLocalPassiveMode
       connected = true
     }
-    connected
+    connected // force le type de retour en booleen
   }
 
   @throws[java.io.IOException]("Already logout")
@@ -37,8 +39,6 @@ class FtpConnexion {
 
   @throws[java.io.IOException]("The path doesn't exist")
   def list(path: String) : Array[FTPFile] = {
-    // TODO list & change return type if needed
-    // val files = client.listFiles(path)
     client.listFiles(path)
   }
 
@@ -56,4 +56,5 @@ class FtpConnexion {
   def delete(file: String) : Boolean = {
     client.deleteFile(file)
   }
+
 }

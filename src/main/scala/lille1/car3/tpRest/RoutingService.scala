@@ -32,28 +32,36 @@ class RoutingActor extends Actor with RoutingService with HelperHtml {
 
 // this trait defines our service behavior independently from the service actor
 trait RoutingService extends HttpService with HelperHtml with HelperFunction {
-  var current_connexion : Option[FtpConnexion] = None
+  implicit val myRejectionHandler = RejectionHandler {
+    case MissingCookieRejection(cookieName) :: _ =>
+      complete(HttpResponse(status = 403, entity = HttpEntity(`text/html`, "<p>Vous devez d'abord <a href=\"http://localhost:8080\">vous authentifiez</a> pour utiliser ce service</p>")))
+    case ValidationRejection(message, cause) :: _ =>
+      complete(HttpResponse(status = 403, entity = HttpEntity(`text/html`, "<p>Votre session a expiré, veuillez <a href=\"http://localhost:8080\">vous reconnectez</a>")))
+    case UnacceptedResponseContentTypeRejection(param) :: _ =>
+      complete(HttpResponse(status = 403, entity = HttpEntity(`text/html`, "<p>Erreur 404, la ressource recherchée n'existe pas")))
+  }
 
   val default_route =
     (path("") & get) {
-      respondWithMediaType(`text/html`) {
-        complete(loginForm)
-      }
+      val info = new FtpConnexion("ftptest", "test", "localhost", 21).info;
+      setCookie(HttpCookie("ftp_connexion", content = info)){
+        complete(info)}
+
+      // respondWithMediaType(`text/html`) {
+      //   complete(loginForm)
+      // }
     } ~
   pathPrefix("list") {
     pathEnd { complete("Use list/html or list/json") } ~
     path("html") {
-      // TODO better handling for connexions ! Does it need a proper authentification ?
-      val t : Option[FtpConnexion] = Some(new FtpConnexion)
-      val Some(cl) = t
-      cl.connect("localhost", 21)
-      cl.login("ftptest", "test")
-
-      t match {
-        case Some(client) =>
-          complete(HTML_ListResponse(client.list("/home/ftptest")))
-            case None => complete{"Failed to retrieve FTP connexion, please relog"}
-          }
+      cookie("ftp_connection") {
+        var tab : Array[String] = cookie_ftp.content.split('_')
+        val connexion = new FtpConnexion(tab(0), tab(1), tab(2), tab(3).toInt)
+        
+        validate(connexion.login, "Vous devez être authentifié pour accéder à ces fonctionnalités"){
+            complete(HTML_ListResponse(connexion.listFiles))      
+        }
+      }
       } ~
       path("json") {
         complete("JSON time")
@@ -63,146 +71,98 @@ trait RoutingService extends HttpService with HelperHtml with HelperFunction {
           */
       }
     } ~
-      (path("get" / """([-_.a-zA-Z0-9]+[.]+[a-zA-Z0-9]{2,})""".r) & get) { filename =>
-      val file = File.createTempFile(filename, null)
-
-      // TODO better handling for connexions ! Does it need a proper authentification ?
-      val t : Option[FtpConnexion] = Some(new FtpConnexion)
-      val Some(cl) = t
-      cl.connect("localhost", 21)
-      cl.login("ftptest", "test")
-
-      t match {
-        case Some(client) =>
-          if (client.download(filename, new FileOutputStream(file))) {
-            respondWithMediaType(`application/octet-stream`) {
-              getFromFile(file)
-            }
-          } else {
-            complete{"Failed to download " + filename}
-          }
-        case None => complete{"Failed to retrieve FTP connexion, please relog"}
-      }
-
-    } ~
-      (path("delete" / """([-_.a-zA-Z0-9]+[.]+[a-zA-Z0-9]{2,})""".r) & get) { filename =>
-
-      // TODO better handling for connexions ! Does it need a proper authentification ?
-      val t : Option[FtpConnexion] = Some(new FtpConnexion)
-      val Some(cl) = t
-      cl.connect("localhost", 21)
-      cl.login("ftptest", "test")
-
-      t match {
-
-        case Some(client) =>
-          // TODO ftpPath + filename
-          if (client.delete(filename)) {
-            complete{filename + " sucessfully deleted!"}
-          } else {
-            complete{"Failed to delete " + filename}
-          }
-        case None => complete{"Failed to retrieve FTP connexion, please relog"}
-      }
-
-      complete("Delete, done")
-      // }
-    } ~
-    pathPrefix("store") {
-      get { complete(storeForm) } ~
-        (path("file") & post) {
-        entity(as[MultipartFormData]) { formData =>
-          val filename = extract(
-            formData.toString,
-            """(filename)(=)([-_.a-zA-Z0-9]+[.]+[a-zA-Z0-9]{2,})""",
-            3)
-
-          formField('file.as[Array[Byte]]) { file =>
-            val temp_file = File.createTempFile(filename, null)
-            val fos = new FileOutputStream(temp_file)
-            try { fos.write(file) }
-            catch {
-              case e : java.io.IOException =>
-                println("Failed to retrieve file")
-                complete("Failed to retrieve file")
-            }
-            finally { fos.close() }
-
-            // TODO better handling for connexions ! Does it need a proper authentification ?
-            val t : Option[FtpConnexion] = Some(new FtpConnexion)
-            val Some(cl) = t
-            cl.connect("localhost", 21)
-            cl.login("ftptest", "test")
-
-            t match {
-              case Some(client) =>
-                // TODO 1st arg: ftpPath + filename
-                // TODO fos: current dir + filename
-
-                if (client.upload(filename, new FileInputStream(temp_file))) {
-                  complete{filename + " sucessfully uploaded!"}
-                } else {
-                  complete{"Failed to upload " + filename}
-                }
-              case None => complete{"Failed to retrieve FTP connexion, please relog"}
-            }
-
-            complete { filename + " Successfully uploaded" }
-          }
+    path("json") {
+      cookie("ftp_connection") {
+        var tab : Array[String] = cookie_ftp.content.split('_')
+        val connexion = new FtpConnexion(tab(0), tab(1), tab(2), tab(3).toInt)
+        
+        validate(connexion.login, "Vous devez être authentifié pour accéder à ces fonctionnalités"){
+            complete(JSON_ListResponse(connexion.listFiles))      
         }
-      }
-    } ~
-      (path("loginAction") & post) {
-      formFields('server_ip.?, 'server_port.as[Int].?, 'login_user.?, 'mdp_user.?) {
-        (ip_opt, port_opt, login_opt, mdp_opt) =>
-
-        // TODO gerer l'ip vide
-        val ip = ip_opt match {
-          case Some(value) if value != "" => value
-          case _ => complete("Failed to find the IP address"); "None"
-        }
-
-        val port = port_opt match {
-          case Some(value) if value != "" => value
-          case _ => complete("Failed to find the port"); 0
-        }
-
-        val login = login_opt match {
-          case Some(value) if value != "" => value
-          case _ => "anonymous"
-        }
-
-        val mdp = mdp_opt match {
-          case Some(value) if value != "" => value
-          case _ => "mdp"
-        }
-
-        val current_connexion = new FtpConnexion
-        try {
-          current_connexion.connect(ip, port)
-        } catch {
-          case e: org.apache.commons.net.ftp.FTPConnectionClosedException =>
-            complete("FAILED to connect to " + ip + ":" + port + "!")
-          case f: java.io.IOException =>
-            complete("FAILED to connect to " + ip + ":" + port + "!")
-        }
-
-        if (! current_connexion.login(login, mdp)) {
-          current_connexion.disconnect; complete("FAILED to login!")
-        }
-        complete {
-          "Connexion to " +ip+ ":" +port+" with " + "["+login+"]:["+mdp+"]" + " => successful"
-          // HttpResponse(
-          //   status = redirectionType,
-          //   headers = Location(uri) :: Nil,
-          //   entity = redirectionType.htmlTemplate match {
-          //     case ""       ⇒ HttpEntity.Empty
-          //     case template ⇒ HttpEntity(`text/html`, template format uri)
-          //   })
-        }
-
       }
     }
-    // fin de la route !
+  } ~
+    (path("get" / """([-_.a-zA-Z0-9]+[.]+[a-zA-Z0-9]{2,})""".r) & get) { filename =>
+    val file = File.createTempFile(filename, null)
+    // TODO better handling for connexions ! Does it need a proper authentification ?
+    // if (client.download(filename, new FileOutputStream(file))) {
+    //   respondWithMediaType(`application/octet-stream`) {
+    //     getFromFile(file)
+    //   }
+    // }
+    complete("d")
+  } ~
+    (path("delete" / """([-_.a-zA-Z0-9]+[.]+[a-zA-Z0-9]{2,})""".r) & get) { filename =>
+    // TODO better handling for connexions ! Does it need a proper authentification ?
+    // if (client.delete(filename)) {
+    // }
+    complete("Delete, done")
 
+  } ~
+  pathPrefix("store") {
+    get { complete(storeForm) } ~
+      (path("file") & post) {
+      entity(as[MultipartFormData]) { formData =>
+        val filename = extract(
+          formData.toString,
+          """(filename)(=)([-_.a-zA-Z0-9]+[.]+[a-zA-Z0-9]{2,})""",
+          3)
+
+        formField('file.as[Array[Byte]]) { file =>
+          val temp_file = File.createTempFile(filename, null)
+          val fos = new FileOutputStream(temp_file)
+          try { fos.write(file) }
+          catch {
+            case e : java.io.IOException =>
+              println("Failed to retrieve file")
+              complete("Failed to retrieve file")
+          }
+          finally { fos.close() }
+          complete("d")
+          // TODO better handling for connexions ! Does it need a proper authentification ?
+          // if (client.upload(filename, new FileInputStream(temp_file))) {
+          // }
+        }
+      }
+    }
+  } ~
+    (path("loginAction") & post) {
+    formFields('server_ip.?, 'server_port.as[Int].?, 'login_user.?, 'mdp_user.?) {
+      (ip_opt, port_opt, login_opt, mdp_opt) =>
+
+      val connexion = new FtpConnexion(login_user, mdp_user, server_ip, port_opt)
+      /*
+      try {
+        current_connexion.connect(ip, port)
+      } catch {
+        // la connexion est restée fermée
+        case e: org.apache.commons.net.ftp.FTPConnectionClosedException =>
+          complete("FAILED to connect to " + ip + ":" + port + "!")
+        case f: java.io.IOException =>
+            // erreur sur les sockets
+          complete("FAILED to connect to " + ip + ":" + port + "!")
+      }
+
+      if (! current_connexion.login(login, mdp)) {
+        current_connexion.disconnect; 
+        complete("FAILED to login!")
+      }
+      */
+      validate(connexion.login, "Vous devez être authentifié pour accéder à ces fonctionnalités") {
+          setCookie("fto_connexion", connexion.info) { 
+            complete(HttpResponse(
+                status = redirectionType,
+                entity = HttpEntity(
+                <html>
+                <head>
+                    <title></title>
+                </head>.toString
+                )
+            )
+          }
+      }
+      // fin de la route !
+
+    }
   }
+}
