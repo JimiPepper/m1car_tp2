@@ -26,129 +26,129 @@ class RoutingActor extends Actor with RoutingService with HelperHtml {
 // Cette structure trait dissocie la création du routing de sa gestion
 trait RoutingService extends HttpService with HelperHtml with HelperFunction with RejectionHandlerRooting {
   val routing =
-  (path("") & get) {
+    (path("") & get) {
       complete(loginForm)
-  } ~
-  (path("login-action") & post) {
-    formFields('server_ip, 'server_port.as[Int], 'login_user, 'mdp_user) { (ip_opt, port_opt, login_opt, mdp_opt) =>
-      val connexion = new FtpConnexion(login_opt, mdp_opt, ip_opt, port_opt)
-      /* NE PAS SUPPRIMER TANT QUE JE NE LE SUPPRIME PAS MOI-MÊME (Romain)
-      try {
-        current_connexion.connect(ip, port)
-      } catch {
-        // la connexion est restée fermée
-        case e: org.apache.commons.net.ftp.FTPConnectionClosedException =>
-          complete("FAILED to connect to " + ip + ":" + port + "!")
-        case f: java.io.IOException =>
-            // erreur sur les sockets
-          complete("FAILED to connect to " + ip + ":" + port + "!")
-      }
+    } ~
+      (path("login-action") & post) {
+      formFields('server_ip, 'server_port.as[Int], 'login_user, 'mdp_user) { (ip_opt, port_opt, login_opt, mdp_opt) =>
+        val connexion = new FtpConnexion(login_opt, mdp_opt, ip_opt, port_opt)
+        /* NE PAS SUPPRIMER TANT QUE JE NE LE SUPPRIME PAS MOI-MÊME (Romain)
+         try {
+         current_connexion.connect(ip, port)
+         } catch {
+         // la connexion est restée fermée
+         case e: org.apache.commons.net.ftp.FTPConnectionClosedException =>
+         complete("FAILED to connect to " + ip + ":" + port + "!")
+         case f: java.io.IOException =>
+         // erreur sur les sockets
+         complete("FAILED to connect to " + ip + ":" + port + "!")
+         }
 
-      if (! current_connexion.login(login, mdp)) {
-        current_connexion.disconnect; 
-        complete("FAILED to login!")
+         if (! current_connexion.login(login, mdp)) {
+         current_connexion.disconnect;
+         complete("FAILED to login!")
+         }
+         */
+        connexion.connect
+        connexion.login
+        // TODO : Faire le test à la main
+        setCookie(HttpCookie("ftp_connexion", connexion.info)) {
+          //complete(loggedInDoneMessage)
+          complete("test")
+        }
       }
-      */
-      connexion.connect
-      connexion.login
-      // TODO : Faire le test à la main
-      setCookie(HttpCookie("ftp_connexion", connexion.info)) {
-        //complete(loggedInDoneMessage)
-        complete("test")
-      }
-    }  
-  } ~ 
+    } ~
   pathPrefix("list") {
-    (pathEnd & get) { 
+    (pathEnd & get) {
       cookie("ftp_connexion") { cookie_ftp =>
         var tab : Array[String] = cookie_ftp.content.split('_')
         val connexion = new FtpConnexion(tab(0), tab(1), tab(2), tab(3).toInt)
 
         connexion.connect
         validate(connexion.login, "Vous devez être authentifié pour accéder à ces fonctionnalités") {
-          complete(listNote)    
+          complete(listNote)
         }
       }
     } ~
-    (path("html") & get) {
+      (path("html") & get) {
       cookie("ftp_connexion") { cookie_ftp =>
         var tab : Array[String] = cookie_ftp.content.split('_')
         val connexion = new FtpConnexion(tab(0), tab(1), tab(2), tab(3).toInt)
-        
+
         connexion.connect
         validate(connexion.login, "Vous devez être authentifié pour accéder à ces fonctionnalités"){
-            complete(HTML_ListResponse(connexion.list(""))) // TODO : Ajouter le chemin du dossier à lister    
-        }
-      } 
-    } ~
-    (path("json") & get) {
-      cookie("ftp_connexion") { cookie_ftp =>
-        var tab : Array[String] = cookie_ftp.content.split('_')
-        val connexion = new FtpConnexion(tab(0), tab(1), tab(2), tab(3).toInt)
-        
-        connexion.connect
-        validate(connexion.login, "Vous devez être authentifié pour accéder à ces fonctionnalités"){
-          complete(JSON_ListResponse(connexion.list(""))) // TODO : Ajouter le chemin du dossier à lister   
+          complete(HTML_ListResponse(connexion.list(""))) // TODO : Ajouter le chemin du dossier à lister
         }
       }
-    }   
+    } ~
+      (path("json") & get) {
+      cookie("ftp_connexion") { cookie_ftp =>
+        var tab : Array[String] = cookie_ftp.content.split('_')
+        val connexion = new FtpConnexion(tab(0), tab(1), tab(2), tab(3).toInt)
+
+        connexion.connect
+        validate(connexion.login, "Vous devez être authentifié pour accéder à ces fonctionnalités"){
+          complete(JSON_ListResponse(connexion.list(""))) // TODO : Ajouter le chemin du dossier à lister
+        }
+      }
+    }
   } ~
-  (path("get" / """([-_.a-zA-Z0-9]+[.]+[a-zA-Z0-9]{2,})""".r) & get) { filename =>
+    (path("get" / """([-_.a-zA-Z0-9]+[.]+[a-zA-Z0-9]{2,})""".r) & get) { filename =>
     val file = File.createTempFile(filename, null)
 
     cookie("ftp_connexion") { cookie_ftp =>
       var tab : Array[String] = cookie_ftp.content.split('_')
       val connexion = new FtpConnexion(tab(0), tab(1), tab(2), tab(3).toInt)
-      
+
       connexion.connect
       validate(connexion.login, "Vous devez être authentifié pour accéder à ces fonctionnalités") {
-        /*
-        * TODO : Terminer le get 
-        *  if (client.download(filename, new FileOutputStream(file))) {
-        *   respondWithMediaType(`application/octet-stream`) {
-        *     getFromFile(file)
-        *   }
-        *  }
-        */
-        complete("Du vide")
-      } 
+        if (connexion.download(filename, new FileOutputStream(file))) {
+          respondWithMediaType(`application/octet-stream`) {
+            getFromFile(file)
+          }
+        }
+        else {
+          complete("Failed to retrieve " + filename)
+        }
+      }
     }
+
   } ~
-  (path("delete" / """([-_.a-zA-Z0-9]+[.]+[a-zA-Z0-9]{2,})""".r) & get) { filename =>
+    (path("delete" / """([-_.a-zA-Z0-9]+[.]+[a-zA-Z0-9]{2,})""".r) & get) { filename =>
     cookie("ftp_connexion") { cookie_ftp =>
       var tab : Array[String] = cookie_ftp.content.split('_')
       val connexion = new FtpConnexion(tab(0), tab(1), tab(2), tab(3).toInt)
-      
+
       connexion.connect
       validate(connexion.login, "Vous devez être authentifié pour accéder à ces fonctionnalités") {
-        /*
-        * TODO : Terminer le delete
-        * if(connexion.delete(filename)) 
-        *   // Du code manquant ?
-        *
-        * complete(deleteDoneMessage)
-        */ 
-        complete("Du vide") // complete temporaire   
+        if (connexion.delete(filename)) {
+          complete(filename + " successfully deleted")
+        }
+        else {
+          complete("Cannot delete " + filename)
+        }
       }
     }
+
   } ~
   pathPrefix("store") {
-    (pathEnd & get) { 
+    (pathEnd & get) {
       cookie("ftp_connexion") { cookie_ftp =>
         var tab : Array[String] = cookie_ftp.content.split('_')
         val connexion = new FtpConnexion(tab(0), tab(1), tab(2), tab(3).toInt)
-        
+
         connexion.connect
         validate(connexion.login, "Vous devez être authentifié pour accéder à ces fonctionnalités") {
           complete(storeForm)
         }
-      }  
+      }
+
     } ~
-    (path("file") & post) {
+      (path("file") & post) {
       cookie("ftp_connexion") { cookie_ftp =>
         var tab : Array[String] = cookie_ftp.content.split('_')
         val connexion = new FtpConnexion(tab(0), tab(1), tab(2), tab(3).toInt)
-        
+
         connexion.connect
         validate(connexion.login, "Vous devez être authentifié pour accéder à ces fonctionnalités") {
           entity(as[MultipartFormData]) { formData =>
@@ -164,14 +164,18 @@ trait RoutingService extends HttpService with HelperHtml with HelperFunction wit
                   complete("Failed to retrieve file")
               }
               finally { fos.close() }
-              
-              complete(storeDoneMessage)
-            }  
+
+              if (connexion.upload(filename, new FileInputStream(temp_file))) {
+                complete(storeDoneMessage)
+              } else {
+                complete("Failed to store " + filename)
+              }
+            }
           }
         }
       }
-    } 
+    }
   }
   // fin du routing
 }
-// fin trait RoutingService 
+// fin trait RoutingService
