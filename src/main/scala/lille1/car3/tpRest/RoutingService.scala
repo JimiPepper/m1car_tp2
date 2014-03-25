@@ -15,32 +15,16 @@ import spray.httpx.unmarshalling.DeserializationError
 import spray.json._
 import spray.routing._
 
-// we don't implement our route structure directly in the service actor because
-// we want to be able to test it independently, without having to spin up an actor
+// L'acteur qui se charge d'éxécuter les différentes actions qu'il reçoit en fonction du routing qui lui est transmit
 class RoutingActor extends Actor with RoutingService with HelperHtml {
 
-  // the HttpService trait defines only one abstract member, which
-  // connects the services environment to the enclosing actor or test
   def actorRefFactory = context
-
-  // this actor only runs our route, but you could add
-  // other things here, like request stream processing
-  // or timeout handling
 
   def receive = runRoute(routing)
 }
 
-// this trait defines our service behavior independently from the service actor
-trait RoutingService extends HttpService with HelperHtml with HelperFunction {
-  implicit val myRejectionHandler = RejectionHandler {
-    case MissingCookieRejection(cookieName) :: _ =>
-      complete(HttpResponse(status = 403, entity = HttpEntity(`text/html`, "<p>Vous devez d'abord <a href=\"http://localhost:8080\">vous authentifiez</a> pour utiliser ce service</p>")))
-    case ValidationRejection(message, cause) :: _ =>
-      complete(HttpResponse(status = 403, entity = HttpEntity(`text/html`, "<p>Votre session a expiré, veuillez <a href=\"http://localhost:8080\">vous reconnectez</a>")))
-    case UnacceptedResponseContentTypeRejection(param) :: _ =>
-      complete(HttpResponse(status = 403, entity = HttpEntity(`text/html`, "<p>Erreur 404, la ressource recherchée n'existe pas")))
-  }
-
+// Cette structure trait dissocie la création du routing de sa gestion
+trait RoutingService extends HttpService with HelperHtml with HelperFunction with RejectionHandlerRooting {
   val routing =
   (path("") & get) {
       complete(loginForm)
@@ -69,13 +53,14 @@ trait RoutingService extends HttpService with HelperHtml with HelperFunction {
       connexion.login
       // TODO : Faire le test à la main
       setCookie(HttpCookie("ftp_connexion", connexion.info)) {
-        complete(loggedInDoneMessage)
+        //complete(loggedInDoneMessage)
+        complete("test")
       }
     }  
   } ~ 
   pathPrefix("list") {
     (pathEnd & get) { 
-      cookie("ftp_connection") { cookie_ftp =>
+      cookie("ftp_connexion") { cookie_ftp =>
         var tab : Array[String] = cookie_ftp.content.split('_')
         val connexion = new FtpConnexion(tab(0), tab(1), tab(2), tab(3).toInt)
 
@@ -86,7 +71,7 @@ trait RoutingService extends HttpService with HelperHtml with HelperFunction {
       }
     } ~
     (path("html") & get) {
-      cookie("ftp_connection") { cookie_ftp =>
+      cookie("ftp_connexion") { cookie_ftp =>
         var tab : Array[String] = cookie_ftp.content.split('_')
         val connexion = new FtpConnexion(tab(0), tab(1), tab(2), tab(3).toInt)
         
@@ -97,7 +82,7 @@ trait RoutingService extends HttpService with HelperHtml with HelperFunction {
       } 
     } ~
     (path("json") & get) {
-      cookie("ftp_connection") { cookie_ftp =>
+      cookie("ftp_connexion") { cookie_ftp =>
         var tab : Array[String] = cookie_ftp.content.split('_')
         val connexion = new FtpConnexion(tab(0), tab(1), tab(2), tab(3).toInt)
         
@@ -130,7 +115,7 @@ trait RoutingService extends HttpService with HelperHtml with HelperFunction {
     }
   } ~
   (path("delete" / """([-_.a-zA-Z0-9]+[.]+[a-zA-Z0-9]{2,})""".r) & get) { filename =>
-    cookie("ftp_connection") { cookie_ftp =>
+    cookie("ftp_connexion") { cookie_ftp =>
       var tab : Array[String] = cookie_ftp.content.split('_')
       val connexion = new FtpConnexion(tab(0), tab(1), tab(2), tab(3).toInt)
       
@@ -149,7 +134,7 @@ trait RoutingService extends HttpService with HelperHtml with HelperFunction {
   } ~
   pathPrefix("store") {
     (pathEnd & get) { 
-      cookie("ftp_connection") { cookie_ftp =>
+      cookie("ftp_connexion") { cookie_ftp =>
         var tab : Array[String] = cookie_ftp.content.split('_')
         val connexion = new FtpConnexion(tab(0), tab(1), tab(2), tab(3).toInt)
         
@@ -160,7 +145,7 @@ trait RoutingService extends HttpService with HelperHtml with HelperFunction {
       }  
     } ~
     (path("file") & post) {
-      cookie("ftp_connection") { cookie_ftp =>
+      cookie("ftp_connexion") { cookie_ftp =>
         var tab : Array[String] = cookie_ftp.content.split('_')
         val connexion = new FtpConnexion(tab(0), tab(1), tab(2), tab(3).toInt)
         
@@ -189,3 +174,4 @@ trait RoutingService extends HttpService with HelperHtml with HelperFunction {
   }
   // fin du routing
 }
+// fin trait RoutingService 
