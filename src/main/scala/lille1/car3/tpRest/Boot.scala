@@ -5,6 +5,12 @@ import akka.io.IO
 import spray.can.Http
 
 object Boot extends App {
+	/**
+  * Objet singleton qui est le "Main" du programme. Il instancie un système d'acteurs,
+  * qui géèe les requêtes HTTP arrivant sur le port 8080 en fonction de la route défini au
+  * sein des acteurs.
+  **/
+
   // Création d'un acteur akka pour gérer le serveur Spray
   implicit val system = ActorSystem()
 

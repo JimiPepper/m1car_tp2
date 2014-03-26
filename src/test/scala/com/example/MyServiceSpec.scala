@@ -10,15 +10,9 @@ import HttpHeaders._
 
 /*
  * Liste des tests à implémenter :
- *       -> Vérifier qu'un utilisateur non-loggué ne puisse pas accéder l'application (renvoi d'une exception) +
  *       -> Si un utilisateur ne fait rien pendant x secondes/minutes, le déconnecter
- *       -> Si un utilisateur non-loggué/connecté tente d'accéder à une page qui n'existe pas (william_est_un_as_d_emacs) renvoyer une exception +
  *       -> Si un utilisateur tente de RETR un fichier qui n'existe pas renvoyer une exception
- *       -> Si un utilisateur veut se déplacer dans un enfant du répertoire courant, il le peut
  *       -> Si l'utilisateur veut PUT un fichier sur le serveur sans passer par storeFile, renvoyer une exception
- *       -> Si l'utilisateur souhaite qu'on lui renvoie du html, on lui envoie du html +
- *       -> Si l'utilisateur renvoie du JSON, on lui envoie du JSON +
- *       -> Quand l'utilisateur se déconnecte, il est bien déconnecté du serveur FTP
  */
 
 class MyServiceSpec extends Specification with Specs2RouteTest with RoutingService {
@@ -77,6 +71,25 @@ class MyServiceSpec extends Specification with Specs2RouteTest with RoutingServi
       Get("/list/json") ~> Cookie(HttpCookie("ftp_connexion", "ftptest_test_localhost_21")) ~> routing ~> check {
         mediaType === `application/json`
       }
+    }
+
+    "peut se déplacer dans un enfant du répertoire courant, il le peut" in {
+      Get("/list/html/toto") ~> Cookie(HttpCookie("ftp_connexion", "ftptest_test_localhost_21")) ~> routing ~> check {
+         status === StatusCodes.Forbidden
+      }
+    }
+
+    "ne pas fournir un fichier qui n'existe pas sur le serveur FTP" in {
+      Get("/get/toto_n_existe_pas.txt") ~> Cookie(HttpCookie("ftp_connexion", "ftptest_test_localhost_21")) ~> routing ~> check {
+        status === StatusCodes.InternalServerError
+      }
+    }  
+
+    "déconnecte l'utilisateur quand il se rend sur la page de déconnexion" in {  
+      Get("/logout") ~> Cookie(HttpCookie("ftp_connexion", "ftptest_test_localhost_21")) ~> routing ~> check {
+        responseAs[String] === "Vous êtes déconnecté"
+        header[`Set-Cookie`] === Some(`Set-Cookie`(HttpCookie("ftp_connexion", content = "deleted", expires = Some(DateTime.MinValue))))
+      }  
     }
   }
 }

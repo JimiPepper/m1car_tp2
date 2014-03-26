@@ -3,7 +3,17 @@ package lille1.car3.tpRest
 import spray.http._
 import spray.http.MediaTypes._
 
+/**
+  * Trait permettant de séparer, simplifier et factoriser la gestion des codes HTML renvoyés
+  * par notre application
+  *
+  * @author Gouzer Willian
+  * @author Philippon Romain
+  **/
 trait HelperHtml {
+  /**
+  * Contient le formulaire de connexion à la passerelle REST
+  **/
   lazy val loginForm = HttpResponse(
     entity = HttpEntity(`text/html`,
         <html>
@@ -32,6 +42,9 @@ trait HelperHtml {
     )
   )
 
+  /**
+  * Contient le formulaire pour héberger un fichier sur un serveur FTP
+  **/
   lazy val storeForm = HttpResponse(
     entity = HttpEntity(`text/html`,
         <html>
@@ -41,8 +54,9 @@ trait HelperHtml {
         <body>
             <h1>Commande STORE - Déposer votre fichier sur le serveur FTP</h1>
 
-            <form name="storeForm" method="post" enctype="multipart/form-data" action="store/file">
-                <input name="file" type="file" />
+            <form name="storeForm" method="post" enctype="multipart/form-data" action="send">
+              <label for="path">Chemin absolu où stocker le fichier : </label> <input type="text" name="path" id="path" /><br />
+              <input name="file" type="file" />
             <input type="submit" value="Déposer" />
             </form>
         </body>
@@ -50,6 +64,9 @@ trait HelperHtml {
     )
   )
 
+  /**
+  * Contient les indications d'utilisations pour la passerelle FTP
+  **/
   lazy val listNote = HttpResponse(
     entity = HttpEntity(`text/html`,
         <html>
@@ -66,11 +83,24 @@ trait HelperHtml {
                     <li>L'URL <a href="list/json">list/json</a> pour visualiser LIST au format JSON</li>
                 </ul>
             </p>
+
+            <p>
+              Par ailleurs, pour :
+              <ul>
+                <li><strong>Télécharger un fichier : </strong>Utiliser le mot get suivi du lien sur le serveur FTP pour télécharger ce fichier, exemple : get/toto.txt</li>
+                <li><strong>Déposer un fichier : </strong>Rendez-vous <a href="store">sur ce lien</a></li>
+                <li><strong>Supprimer un fichier : </strong> Utiliser le mot delete suivi du lien sur le serveur FTP pour télécharger ce fichier, exemple : delete/toto.txt</li>
+                <li><strong>Vous déconnecter : </strong>Rendez-vous <a href="logout">ici</a></li>
+              </ul>
+            </p>
         </body>
         </html>.toString
     )
   )
 
+  /**
+  * Contient la page d'erreur HTTP 404
+  **/
   lazy val error404Html = HttpResponse(
     status = 404,
     entity = HttpEntity(`text/html`,
@@ -88,6 +118,9 @@ trait HelperHtml {
     )
   )
 
+  /**
+  * Contient le message de succès de suppression d'un fichier distant sur serveur FTP
+  **/
   lazy val deleteDoneMessage = HttpResponse(
     status = 200,
     entity = HttpEntity(`text/html`,
@@ -102,6 +135,9 @@ trait HelperHtml {
     )
   )
 
+  /**
+  * Contient le message de succès d'upload d'un fichier sur un serveur FTP
+  **/
   lazy val storeDoneMessage = HttpResponse(
     status = 200,
     entity = HttpEntity(`text/html`,
@@ -116,6 +152,9 @@ trait HelperHtml {
     )
   )
 
+  /**
+  * Contient le message de succès d'authentification utilisateur
+  **/
   lazy val loggedInDoneMessage = HttpResponse(
     status = 200,
     entity = HttpEntity(`text/html`,

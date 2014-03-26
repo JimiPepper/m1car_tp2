@@ -6,8 +6,17 @@ import StatusCodes._
 import Directives._
 import MediaTypes._
 
+/**
+  * Contient les redirections personnalisées servant à la gestion des cas d'erreurs lorsqu'une route renvoie une Rejection
+  *
+  * @author Gouzer Willian
+  * @author Philippon Romain
+  **/
 trait RejectionHandlerRooting
 {
+	/**
+	* Surcharge la gestion des rejections de Spray en modifiant le contenu des réponses HTTP symbolisé par la classe HttpResponse de Spray
+	**/
 	implicit val myRejectionHandler = RejectionHandler {
     case MissingCookieRejection(cookieName) :: _ =>
       complete(HttpResponse(status = 403, entity = HttpEntity(`text/html`, "<p>Vous devez d'abord <a href=\"http://localhost:8080\">vous authentifiez</a> pour utiliser ce service</p>")))
