@@ -21,8 +21,8 @@ trait HelperFunction extends DefaultJsonProtocol {
 
     for(f <- files) {
       map + ("filename" -> f.getName())
-      responseJSON = map :: responseJSON
       /* ... */
+      responseJSON = map :: responseJSON
       map = Map[String, String]()
     }
 
@@ -32,16 +32,54 @@ trait HelperFunction extends DefaultJsonProtocol {
     )
   }
 
-  def HTML_ListResponse(files: Array[FTPFile]) : HttpResponse = {
-    var responseHTML = new String("""<html><head><title>Commande LIST - HTML</title></head><body><h1>Commande LIST FTP - Version HTML</h1><ul style="list-style: none;">""")
-    for(f <- files) {
-      if (f.isDirectory) {
-        responseHTML += "<li><b><a href='" + f.getLink() + "'>" + f.getName() + "/</a></b></li>"
+  def HTML_ListResponse(pathname: String, files: Array[FTPFile]) : HttpResponse = {
+    var responseHTML = new String("""<html><head><title>Commande LIST - HTML</title></head>
+<body><h1>Commande LIST FTP - Version HTML</h1>""")
+
+    // lien pour remonter au parent
+    if (pathname != "" ) {
+      if (pathname.lastIndexOf("/") != -1) {
+        responseHTML += "<a href='/list/html/" + pathname.substring(0, pathname.lastIndexOf("/")) +
+        "'onclick=\"list(\'/list/html/"+pathname.substring(0,pathname.lastIndexOf("/"))+
+"\');return false;\" ><b>..</b></a<br/>"
       } else {
-        responseHTML += "<li><a href='" + f.getLink() + "'>" + f.getName() + "</a></li>"
+        responseHTML += "<a href='/list/html/default' onclick=\'list(\"/list/html/default\");return false;\' ><b>..</b></a><br/>"
       }
     }
-    responseHTML += "</ul></body></html>"
+
+    // met en forme la chaine représentant le path (i.e. supprime les '/' inutiles)
+    var path = {
+      if (pathname.length >= 1) {
+        pathname(0) match { // retire le premier / du chemin
+          case '/' => pathname.slice(1, pathname.length) + "/"
+          case _ => pathname + "/"
+        }
+      } else ""
+    }
+
+    responseHTML += """<ul style="list-style: none;">"""
+    for(f <- files) {
+      f.isDirectory match {
+        case true =>
+          responseHTML += "<li><b><a href=\"/list/html/" + path + f.getName +
+          "\" onclick=\"list(\'"+"/list/html/"+ path + f.getName + "\'); return false;\">" +
+          f.getName() + "/</a></b></li>"
+        case false =>
+          responseHTML += "<li><a href='/delete/"+f.getName+
+          "' onclick=\'deleteFile(\"/delete/"+f.getName + "\");return false;\' ><b>[</b>X<b>]</b></a>"
+          responseHTML += "  <a href=\"/get/"+path+f.getName+"\">"+f.getName()+ "</a></li>"
+
+      }
+
+    }
+    responseHTML += "</ul>"
+
+    responseHTML += """<h1>Commande STORE - Déposer votre fichier sur le serveur FTP</h1>"""
+    responseHTML += """<form name="storeForm" method="post" enctype="multipart/form-data" action="/store/file">"""
+    responseHTML += """<input name="file" type="file" /><input type="submit" value="Déposer" /></form>"""
+
+
+    responseHTML += "</body></html>"
 
     HttpResponse(
       status = 200,

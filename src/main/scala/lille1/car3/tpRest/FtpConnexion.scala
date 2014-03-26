@@ -14,7 +14,7 @@ class FtpConnexion(userLogin: String, userMdp: String, serverAddress: String, se
   var connected: Boolean = false
 
   @throws[java.io.IOException]("The ip/port doesn't exist")
-    def connect : Unit = {
+  def connect : Unit = {
     client.connect(serverAddress, serverPort)
   }
 
@@ -55,6 +55,11 @@ class FtpConnexion(userLogin: String, userMdp: String, serverAddress: String, se
   @throws[java.io.IOException]("The file doesn't exist")
   def delete(file: String) : Boolean = {
     client.deleteFile(file)
+  }
+
+  @throws[java.io.IOException]("The path doesn't exist")
+  def cwd(path: String) : Int = {
+    client.cwd(path)
   }
 
 }

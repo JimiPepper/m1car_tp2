@@ -99,7 +99,7 @@ trait HelperHtml {
         <h1>Le fichier est bien supprimé</h1>
       </body>
       </html>.toString
-    ) 
+    )
   )
 
   lazy val storeDoneMessage = HttpResponse(
@@ -113,7 +113,7 @@ trait HelperHtml {
         <h1>Le fichier est bien uploadé sur le serveur FTP</h1>
       </body>
       </html>.toString
-    ) 
+    )
   )
 
   lazy val loggedInDoneMessage = HttpResponse(
@@ -131,6 +131,6 @@ trait HelperHtml {
         </p>
       </body>
       </html>.toString
-    ) 
+    )
   )
 }

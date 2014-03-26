@@ -7,6 +7,16 @@
 PASSERELLE REST
 ===============
 
+
+TODO:
+
+* list/html passe pas, il faut contourner par list/html/default pour l'instant
+* la navigation dans les dossiers foire parfois (e.g. 2 niveaux de
+profondeurs), semble être lié au premier point)
+* l'upload de fichiers dans list/html doit prendre en compte le path
+  et pas upload à la racine
+
+
 PRÉSENTATION
 ------------
 Ce logiciel est une passerelle REST pour serveur FTP développé en

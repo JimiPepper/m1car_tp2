@@ -54,7 +54,9 @@ trait RoutingService extends HttpService with HelperHtml with HelperFunction wit
         // TODO : Faire le test à la main
         setCookie(HttpCookie("ftp_connexion", connexion.info)) {
           //complete(loggedInDoneMessage)
-          complete("test")
+          pathEnd {
+            redirect("/list/html/default", StatusCodes.SeeOther) // TemporaryRedirect
+          }
         }
       }
     } ~
@@ -70,25 +72,35 @@ trait RoutingService extends HttpService with HelperHtml with HelperFunction wit
         }
       }
     } ~
-      (path("html") & get) {
+      (path("html" / """.*""".r) & get) { path =>
       cookie("ftp_connexion") { cookie_ftp =>
         var tab : Array[String] = cookie_ftp.content.split('_')
         val connexion = new FtpConnexion(tab(0), tab(1), tab(2), tab(3).toInt)
 
         connexion.connect
-        validate(connexion.login, "Vous devez être authentifié pour accéder à ces fonctionnalités"){
-          complete(HTML_ListResponse(connexion.list(""))) // TODO : Ajouter le chemin du dossier à lister
+        validate(connexion.login, "Vous devez être authentifié pour accéder à ces fonctionnalités") {
+          connexion.login
+          if (path == "" || path == "default") {
+            connexion.cwd("")
+            complete(HTML_ListResponse("", connexion.list("")))
+          } else {
+            val long_path = (path.split("/"))(path.split("/").length-1)
+            connexion.cwd(long_path)
+            println("LONG_PATH: " +long_path)
+            complete(HTML_ListResponse(long_path, connexion.list("")))
+          }
         }
       }
     } ~
-      (path("json") & get) {
+      (path("json" / """.+""".r) & get) { path =>
       cookie("ftp_connexion") { cookie_ftp =>
         var tab : Array[String] = cookie_ftp.content.split('_')
         val connexion = new FtpConnexion(tab(0), tab(1), tab(2), tab(3).toInt)
 
         connexion.connect
         validate(connexion.login, "Vous devez être authentifié pour accéder à ces fonctionnalités"){
-          complete(JSON_ListResponse(connexion.list(""))) // TODO : Ajouter le chemin du dossier à lister
+          connexion.login
+          complete(JSON_ListResponse(connexion.list("")))
         }
       }
     }
@@ -102,22 +114,13 @@ trait RoutingService extends HttpService with HelperHtml with HelperFunction wit
 
       connexion.connect
       validate(connexion.login, "Vous devez être authentifié pour accéder à ces fonctionnalités") {
-        // connexion.download(filename, new FileOutputStream(file)) match {
-        //   case true =>
-        //     respondWithMediaType(`application/octet-stream`) { getFromFile(file) }
-        //   // complete("true")
-        //   case false => complete("false")
-        // }
-        complete(filename + " succesfully downloaded")
+        connexion.login
+        connexion.download(filename, new FileOutputStream(file)) match {
+          case true =>
+            respondWithMediaType(`application/octet-stream`) { getFromFile(file) }
+          case false => complete("Cannot download " + filename)
+        }
       }
-
-      connexion.download(filename, new FileOutputStream(file)) match {
-        case true =>
-          respondWithMediaType(`application/octet-stream`) { getFromFile(file) }
-        // complete("true")
-        case false => complete("false")
-      }
-
     }
 
   } ~
@@ -128,17 +131,12 @@ trait RoutingService extends HttpService with HelperHtml with HelperFunction wit
 
       connexion.connect
       validate(connexion.login, "Vous devez être authentifié pour accéder à ces fonctionnalités") {
-        // connexion.delete(filename) match {
-        //   case true => complete("true")
-        //   case false => complete("false")
-        // }
-        complete("do")
+        connexion.login
+        connexion.delete(filename) match {
+          case true => complete("true")
+          case false => complete("false")
+        }
       }
-      connexion.delete(filename) match {
-        case true => complete("true")
-        case false => complete("false")
-      }
-
     }
 
   } ~
@@ -150,6 +148,7 @@ trait RoutingService extends HttpService with HelperHtml with HelperFunction wit
 
         connexion.connect
         validate(connexion.login, "Vous devez être authentifié pour accéder à ces fonctionnalités") {
+          connexion.login
           complete(storeForm)
         }
       }
@@ -162,6 +161,7 @@ trait RoutingService extends HttpService with HelperHtml with HelperFunction wit
 
         connexion.connect
         validate(connexion.login, "Vous devez être authentifié pour accéder à ces fonctionnalités") {
+          connexion.login
           entity(as[MultipartFormData]) { formData =>
             val filename = extract(formData.toString, """(filename)(=)([-_.a-zA-Z0-9]+[.]+[a-zA-Z0-9]{2,})""", 3)
 
