@@ -33,32 +33,14 @@ trait RoutingService extends HttpService with HelperHtml with HelperFunction wit
   (path("login-action") & post) {
     formFields('server_ip, 'server_port.as[Int], 'login_user, 'mdp_user) { (ip_opt, port_opt, login_opt, mdp_opt) =>
       val connexion = new FtpConnexion(login_opt, mdp_opt, ip_opt, port_opt)
-      /* NE PAS SUPPRIMER TANT QUE JE NE LE SUPPRIME PAS MOI-MÊME (Romain)
-       try {
-       current_connexion.connect(ip, port)
-       } catch {
-       // la connexion est restée fermée
-       case e: org.apache.commons.net.ftp.FTPConnectionClosedException =>
-       complete("FAILED to connect to " + ip + ":" + port + "!")
-       case f: java.io.IOException =>
-       // erreur sur les sockets
-       complete("FAILED to connect to " + ip + ":" + port + "!")
-       }
-
-       if (! current_connexion.login(login, mdp)) {
-       current_connexion.disconnect;
-       complete("FAILED to login!")
-       }
-       */
-
+     
       connexion.connect
-      connexion.login
-      //validate(connexion.login, "Vous devez être authentifié pour accéder à ces fonctionnalités") {
+      validate(connexion.login, "Vous devez être authentifié pour accéder à ces fonctionnalités") {
         setCookie(HttpCookie("ftp_connexion", connexion.info)) {
           complete(loggedInDoneMessage)
-        }
-      //}
-    }
+        }  
+      }
+    }  
   } ~
   (path("list") & get) {
     cookie("ftp_connexion") { cookie_ftp =>
@@ -95,7 +77,7 @@ trait RoutingService extends HttpService with HelperHtml with HelperFunction wit
 
           piece_of_route match {
             case head :: tail => complete(HTML_ListResponse("/"+ piece_of_route.mkString("/"), connexion.list(piece_of_route.mkString("/"))))
-            case List() => complete("demerde toi")
+            case List() => complete(HttpResponse(status = StatusCodes.NoContent, entity = HttpEntity(`text/html`, <html><head><title></title></head><body><p>Le dossier est introuvable</p></body></html>.toString)))
           }
         }
       } 
@@ -125,7 +107,7 @@ trait RoutingService extends HttpService with HelperHtml with HelperFunction wit
 
           piece_of_route match {
             case head :: tail => complete(JSON_ListResponse(connexion.list(piece_of_route.mkString("/"))))
-            case List() => complete("demerde toi")
+            case List() => complete(HttpResponse(status = StatusCodes.NoContent, entity = HttpEntity(`text/html`, <html><head><title></title></head><body><p>Le dossier est introuvable</p></body></html>.toString)))
           }
         }
       } 
@@ -145,9 +127,9 @@ trait RoutingService extends HttpService with HelperHtml with HelperFunction wit
             val file = File.createTempFile(piece_of_route.mkString("/"), null)
             connexion.download(piece_of_route.mkString("/"), new FileOutputStream(file)) match {
               case true => respondWithMediaType(`application/octet-stream`) { getFromFile(file) }
-              case false => complete("Cannot download ")
+              case false => complete(HttpResponse(status = StatusCodes.InternalServerError, entity = HttpEntity(`text/html`, <html><head><title></title></head><body><p>Veuillez retentez l'opération celle-ci vient d'échouer</p></body></html>.toString)))
             }
-          case List() => complete("demerde toi")
+          case List() => complete(HttpResponse(status = StatusCodes.NoContent, entity = HttpEntity(`text/html`, <html><head><title></title></head><body><p>Le fichier que vous vouliez télécharger est introuvable</p></body></html>.toString)))
         }
       }
     }
@@ -163,10 +145,10 @@ trait RoutingService extends HttpService with HelperHtml with HelperFunction wit
     
         piece_of_route match {
           case head :: tail => connexion.delete(piece_of_route.mkString("/")) match {
-            case true => complete("Supprimé")
-            case false => complete("Cannot download ")
+            case true => redirect("http://localhost/delete/"+ piece_of_route.mkString("/"), StatusCodes.MovedPermanently)
+            case false => complete(HttpResponse(status = StatusCodes.InternalServerError, entity = HttpEntity(`text/html`, <html><head><title></title></head><body><p>Veuillez retentez l'opération celle-ci d'échouer</p></body></html>.toString)))
           }
-          case List() => complete("demerde toi")
+          case List() => complete(HttpResponse(status = StatusCodes.NoContent, entity = HttpEntity(`text/html`, <html><head><title></title></head><body><p>Le fichier que vous vouliez supprimer est introuvable</p></body></html>.toString)))
         }
       }
     }
@@ -200,14 +182,13 @@ trait RoutingService extends HttpService with HelperHtml with HelperFunction wit
             try { fos.write(file) }
             catch {
               case e : java.io.IOException =>
-                println("Failed to retrieve file")
-                complete("Failed to retrieve file")
+                
             }
             finally { fos.close() }
 
             connexion.upload(filename, new FileInputStream(temp_file)) match {
-              case true => complete(storeDoneMessage)
-              case false => complete("Failed to store " + filename)
+              case true => complete(HttpResponse(status = StatusCodes.InternalServerError, entity = HttpEntity(`text/html`, <html><head><title></title></head><body><p>Veuillez retentez l'opération celle-ci d'échouer</p></body></html>.toString)))
+              case false => complete(HttpResponse(status = StatusCodes.InternalServerError, entity = HttpEntity(`text/html`, <html><head><title></title></head><body><p>Veuillez retentez l'opération celle-ci d'échouer</p></body></html>.toString)))
             }
           }
         }
