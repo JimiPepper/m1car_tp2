@@ -3,13 +3,13 @@ package lille1.car3.tpRest
 import java.io.FileOutputStream
 import java.io.InputStream
 import org.apache.commons.net.ftp._
-import java.io.Exception
+import java.lang.Exception
 
-class FtpConnexion(login: String, mdp: String, serverAddress: String, serverPort: Int) {
-  override def toString = s"FtpConnexion($login, $mdp, $serverAddress, $serverPort)"
+class FtpConnexion(userLogin: String, userMdp: String, serverAddress: String, serverPort: Int) {
+  override def toString = s"FtpConnexion($userLogin, $userMdp, $serverAddress, $serverPort)"
 
   def info : String = {
-    login +"_"+ mdp +"_"+ serverAddress +"_"+ serverPort.toString
+    userLogin +"_"+ userMdp +"_"+ serverAddress +"_"+ serverPort.toString
   }
 
   var client = new FTPClient
@@ -19,7 +19,7 @@ class FtpConnexion(login: String, mdp: String, serverAddress: String, serverPort
       client.connect(serverAddress, serverPort)
       true
     }
-    catch(Exception e) {
+    catch {
       case e: Exception => false
     }
   }
@@ -29,21 +29,22 @@ class FtpConnexion(login: String, mdp: String, serverAddress: String, serverPort
       client.disconnect
       true
     }
-    catch(Exception e) {
+    catch {
       case e: Exception => false
     }
   }
 
   def login : Boolean = {
+    var connected = false
     try {
-      if (client.login(login, mdp)) {
+      if (client.login(userLogin, userMdp)) {
         client.setFileType(FTP.BINARY_FILE_TYPE)
-        true
+        connected = true
       }
 
-      false
+      connected
     }
-    catch(Exception e) {
+    catch {
       case e: Exception => false
     }
   }

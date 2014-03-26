@@ -33,9 +33,22 @@ trait HelperFunction extends DefaultJsonProtocol {
   }
 
   def HTML_ListResponse(pathname: String, files: Array[FTPFile]) : HttpResponse = {
-    var responseHTML = new String("<html><head><title>Commande LIST - HTML</title></head><body><h1>Commande LIST FTP - Version HTML</h1>")
+    var responseHTML = new String("<html><head><meta charset=\"UTF-8\"><title>Commande LIST - HTML</title></head>")
+    responseHTML += "<body><h1>Commande LIST FTP - Version HTML</h1><h3>Répertoire courant : "+ pathname +"</h3>"
 
-    // lien pour remonter au parent
+    responseHTML += "<div><p><em>Légende :</em> <span style=\"color: red;\">Dossier</span></p></div>"
+    responseHTML += "<div><ul style=\"list-style: none;\">"
+
+    for(f <- files) {
+      f.isDirectory match {
+        case true => responseHTML += "<li><a style=\"color: red;\" href=\"http://localhost:8080/list/html"+ pathname +"/"+ f.getName +"\">"+ f.getName +"</a></li>"
+        case false => responseHTML += "<li><strong><a href=\"http://localhost:8080/delete"+ pathname +"/"+ f.getName +"\">X</a></strong> <a href=\"http://localhost:8080/get"+ pathname +"/"+ f.getName +"\">"+ f.getName +"</a></li>"
+      }
+    }
+
+    
+    responseHTML += "</ul></div></body></html>"
+    /*
     if (pathname != "" ) {
       if (pathname.lastIndexOf("/") != -1) {
         responseHTML += "<a href='/list/html/" + pathname.substring(0, pathname.lastIndexOf("/")) +
@@ -79,6 +92,7 @@ trait HelperFunction extends DefaultJsonProtocol {
 
 
     responseHTML += "</body></html>"
+    */
 
     HttpResponse(
       status = 200,

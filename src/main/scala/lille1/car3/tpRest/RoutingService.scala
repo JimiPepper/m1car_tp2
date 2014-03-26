@@ -52,11 +52,12 @@ trait RoutingService extends HttpService with HelperHtml with HelperFunction wit
        */
 
       connexion.connect
-      validate(connexion.login, "Vous devez être authentifié pour accéder à ces fonctionnalités") {
+      connexion.login
+      //validate(connexion.login, "Vous devez être authentifié pour accéder à ces fonctionnalités") {
         setCookie(HttpCookie("ftp_connexion", connexion.info)) {
           complete(loggedInDoneMessage)
         }
-      }
+      //}
     }
   } ~
   (path("list") & get) {
@@ -67,18 +68,6 @@ trait RoutingService extends HttpService with HelperHtml with HelperFunction wit
       connexion.connect
       validate(connexion.login, "Vous devez être authentifié pour accéder à ces fonctionnalités") {
         complete(listNote)
-      }
-    }
-  } ~
-  (path("list" / "html") & get) {
-    cookie("ftp_connexion") { cookie_ftp =>
-      var tab : Array[String] = cookie_ftp.content.split('_')
-      var connexion = new FtpConnexion(tab(0), tab(1), tab(2), tab(3).toInt)
-
-      connexion.connect
-      validate(connexion.login, "Vous devez être authentifié pour accéder à ces fonctionnalités") {
-        connexion.login
-        complete(HTML_ListResponse("", connexion.list("")))
       }
     }
   } ~
@@ -105,7 +94,7 @@ trait RoutingService extends HttpService with HelperHtml with HelperFunction wit
           connexion.login
 
           piece_of_route match {
-            case head :: tail => complete(HTML_ListResponse("", connexion.list(piece_of_route.mkString("/"))))
+            case head :: tail => complete(HTML_ListResponse("/"+ piece_of_route.mkString("/"), connexion.list(piece_of_route.mkString("/"))))
             case List() => complete("demerde toi")
           }
         }
