@@ -3,63 +3,93 @@ package lille1.car3.tpRest
 import java.io.FileOutputStream
 import java.io.InputStream
 import org.apache.commons.net.ftp._
-import scala.throws
+import java.io.Exception
 
-class FtpConnexion(userLogin: String, userMdp: String, serverAddress: String, serverPort: Int) {
-  override def toString = s"FtpConnexion($userLogin, $userMdp, $serverAddress, $serverPort)"
+class FtpConnexion(login: String, mdp: String, serverAddress: String, serverPort: Int) {
+  override def toString = s"FtpConnexion($login, $mdp, $serverAddress, $serverPort)"
 
-  def info : String = userLogin + "_" + userMdp + "_" + serverAddress + "_" + serverPort.toString
+  def info : String = {
+    login +"_"+ mdp +"_"+ serverAddress +"_"+ serverPort.toString
+  }
 
   var client = new FTPClient
-  var connected: Boolean = false
-
-  @throws[java.io.IOException]("The ip/port doesn't exist")
-  def connect : Unit = {
-    client.connect(serverAddress, serverPort)
-  }
-
-  @throws[java.io.IOException]("Already disconnected")
-  def disconnect : Unit = {
-    client.disconnect
-  }
-
-  @throws[java.io.IOException]("The login/mdp doesn't exist")
-  def login : Boolean = {
-    if (client.login(userLogin, userMdp)) {
-      client.setFileType(FTP.BINARY_FILE_TYPE)
-      connected = true
+  
+  def connect : Boolean = {
+    try {
+      client.connect(serverAddress, serverPort)
+      true
     }
-    connected // force le type de retour en booleen
+    catch(Exception e) {
+      case e: Exception => false
+    }
   }
 
-  @throws[java.io.IOException]("Already logout")
+  def disconnect : Boolean = {
+    try {
+      client.disconnect
+      true
+    }
+    catch(Exception e) {
+      case e: Exception => false
+    }
+  }
+
+  def login : Boolean = {
+    try {
+      if (client.login(login, mdp)) {
+        client.setFileType(FTP.BINARY_FILE_TYPE)
+        true
+      }
+
+      false
+    }
+    catch(Exception e) {
+      case e: Exception => false
+    }
+  }
+
   def logout : Boolean = {
-    client.logout
+    try { 
+      client.logout
+    } 
+    catch {
+      case e: Exception => false
+    }
   }
 
-  @throws[java.io.IOException]("The path doesn't exist")
   def list(path: String) : Array[FTPFile] = {
-    client.listFiles(path)
+    try { 
+      client.listFiles(path)
+    } 
+    catch {
+      case e: Exception => Array[FTPFile]()
+    }
   }
 
-  @throws[java.io.IOException]("The file doesn't exist")
   def upload(file: String, is: InputStream) : Boolean = {
-    client.storeFile(file, is)
+    try { 
+      client.storeFile(file, is)
+    } 
+    catch {
+      case e: Exception => false
+    }
   }
 
-  @throws[java.io.IOException]("The file doesn't exist")
   def download(file: String, fos: FileOutputStream) : Boolean = {
-    client.retrieveFile(file, fos)
+    try { 
+      client.retrieveFile(file, fos)
+    } 
+    catch {
+      case e: Exception => false
+    }
   }
 
-  @throws[java.io.IOException]("The file doesn't exist")
   def delete(file: String) : Boolean = {
-    client.deleteFile(file)
+    try { 
+      client.deleteFile(file)
+    } 
+    catch {
+      case e: Exception => false
+    }
   }
-
-  @throws[java.io.IOException]("The path doesn't exist")
-  def cwd(path: String) : Int = {
-    client.cwd(path)
-  }
-
 }
