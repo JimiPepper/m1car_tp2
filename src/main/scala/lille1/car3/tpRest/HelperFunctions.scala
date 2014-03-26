@@ -33,8 +33,7 @@ trait HelperFunction extends DefaultJsonProtocol {
   }
 
   def HTML_ListResponse(pathname: String, files: Array[FTPFile]) : HttpResponse = {
-    var responseHTML = new String("""<html><head><title>Commande LIST - HTML</title></head>
-<body><h1>Commande LIST FTP - Version HTML</h1>""")
+    var responseHTML = new String("<html><head><title>Commande LIST - HTML</title></head><body><h1>Commande LIST FTP - Version HTML</h1>")
 
     // lien pour remonter au parent
     if (pathname != "" ) {
