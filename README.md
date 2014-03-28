@@ -4,8 +4,8 @@
 PASSERELLE REST POUR SERVEUR FTP
 ================================
 
-* W1gz
-* JimiPepper
+* w1gz
+* Jimiepper
 
 27/03/2014
 
@@ -147,3 +147,8 @@ La définition d'une route avec des gardes permet de contrôler le comportement 
 
 REMARQUES
 ---------
+
+Pour le diagramme de classes, les éléments en :
+  * bleu représentent les traits
+  * orange symbolisent les classes
+  * jaune sont des objets
