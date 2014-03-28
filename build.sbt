@@ -1,8 +1,16 @@
+import AssemblyKeys._
+
 organization  := "lille1.car3.tpRest"
 
 version       := "0.1"
 
 scalaVersion  := "2.10.3"
+
+assemblySettings
+
+jarName in assembly := "tp2-gouzer-william-philippon-romain.jar"
+
+mainClass in assembly := Some("lille1.car3.tpRest.main.Boot")
 
 scalacOptions := Seq("-unchecked", "-deprecation", "-encoding", "utf8")
 

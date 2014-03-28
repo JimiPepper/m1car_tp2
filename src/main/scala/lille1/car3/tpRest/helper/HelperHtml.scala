@@ -1,4 +1,4 @@
-package lille1.car3.tpRest
+package lille1.car3.tpRest.helper
 
 import spray.http._
 import spray.http.MediaTypes._
@@ -87,10 +87,10 @@ trait HelperHtml {
             <p>
               Par ailleurs, pour :
               <ul>
-                <li><strong>Télécharger un fichier : </strong>Utiliser le mot get suivi du lien sur le serveur FTP pour télécharger ce fichier, exemple : get/toto.txt</li>
+                <li><strong>Telecharger un fichier : </strong>Utiliser le mot get suivi du lien sur le serveur FTP pour telecharger ce fichier, exemple : get/toto.txt</li>
                 <li><strong>Déposer un fichier : </strong>Rendez-vous <a href="store">sur ce lien</a></li>
-                <li><strong>Supprimer un fichier : </strong> Utiliser le mot delete suivi du lien sur le serveur FTP pour télécharger ce fichier, exemple : delete/toto.txt</li>
-                <li><strong>Vous déconnecter : </strong>Rendez-vous <a href="logout">ici</a></li>
+                <li><strong>Supprimer un fichier : </strong> Utiliser le mot delete suivi du lien sur le serveur FTP pour telecharger ce fichier, exemple : delete/toto.txt</li>
+                <li><strong>Vous deconnecter : </strong>Rendez-vous <a href="logout">ici</a></li>
               </ul>
             </p>
         </body>

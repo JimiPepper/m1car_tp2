@@ -1,4 +1,4 @@
-package lille1.car3.tpRest
+package lille1.car3.tpRest.test
 
 import org.specs2.mutable.Specification
 import spray.testkit.Specs2RouteTest
@@ -7,15 +7,9 @@ import spray.routing._
 import StatusCodes._
 import spray.http.MediaTypes._
 import HttpHeaders._
+import lille1.car3.tpRest.util.RoutingService
 
-/*
- * Liste des tests à implémenter :
- *       -> Si un utilisateur ne fait rien pendant x secondes/minutes, le déconnecter
- *       -> Si un utilisateur tente de RETR un fichier qui n'existe pas renvoyer une exception
- *       -> Si l'utilisateur veut PUT un fichier sur le serveur sans passer par storeFile, renvoyer une exception
- */
-
-class MyServiceSpec extends Specification with Specs2RouteTest with RoutingService {
+class PasserelleTestSpec extends Specification with Specs2RouteTest with RoutingService {
   def actorRefFactory = system
 
   "RoutingService" should {
@@ -87,7 +81,7 @@ class MyServiceSpec extends Specification with Specs2RouteTest with RoutingServi
 
     "déconnecte l'utilisateur quand il se rend sur la page de déconnexion" in {  
       Get("/logout") ~> Cookie(HttpCookie("ftp_connexion", "ftptest_test_localhost_21")) ~> routing ~> check {
-        responseAs[String] === "Vous êtes déconnecté"
+        responseAs[String] === "Vous etes deconnecte"
         header[`Set-Cookie`] === Some(`Set-Cookie`(HttpCookie("ftp_connexion", content = "deleted", expires = Some(DateTime.MinValue))))
       }  
     }

@@ -1,4 +1,4 @@
-package lille1.car3.tpRest
+package lille1.car3.tpRest.util
 
 import java.io.FileOutputStream
 import java.io.InputStream
@@ -47,7 +47,8 @@ class FTPConnexion(userLogin: String, userMdp: String, serverAddress: String, se
       true
     }
     catch {
-      case e: Exception => false
+      case ioe: java.io.IOException => println("IOException while listing files"); false
+      case se: java.net.SocketException => println("SocketException while listing files"); false
     }
   }
 
@@ -68,7 +69,8 @@ class FTPConnexion(userLogin: String, userMdp: String, serverAddress: String, se
       connected
     }
     catch {
-      case e: Exception => false
+      case ioe: java.io.IOException => println("IOException while listing files"); false
+      case se: java.net.SocketException => println("SocketException while listing files"); false
     }
   }
 
@@ -77,7 +79,7 @@ class FTPConnexion(userLogin: String, userMdp: String, serverAddress: String, se
     *
     * @param path Le chemin du dossier à lister
     * @return Retourne la liste des fichiers et dossiers contenu dans path
-    * @throw FileNotFoundException quand le dossier passé en paramètre n'existe pas dans
+    * @throws FileNotFoundException quand le dossier passé en paramètre n'existe pas dans
     * l'arborescence du serveur FTP
     **/  
   def list(path: String) : Array[FTPFile] = {
@@ -105,7 +107,8 @@ class FTPConnexion(userLogin: String, userMdp: String, serverAddress: String, se
       client.storeFile(file, is)
     } 
     catch {
-      case e: Exception => false
+      case ioe: java.io.IOException => println("IOException while listing files"); false
+      case se: java.net.SocketException => false
     }
   }
 
@@ -121,7 +124,8 @@ class FTPConnexion(userLogin: String, userMdp: String, serverAddress: String, se
       client.retrieveFile(file, fos)
     } 
     catch {
-      case e: Exception => false
+      case ioe: java.io.IOException => println("IOException while listing files"); false
+      case se: java.net.SocketException => false
     }
   }
 
@@ -136,7 +140,8 @@ class FTPConnexion(userLogin: String, userMdp: String, serverAddress: String, se
       client.deleteFile(file)
     } 
     catch {
-      case e: Exception => false
+      case i: java.io.IOException => println("IOException while listing files"); false
+      case s: java.net.SocketException => false
     }
   }
 }

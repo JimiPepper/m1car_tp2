@@ -1,6 +1,6 @@
-package lille1.car3.tpRest
+package lille1.car3.tpRest.helper
 
-import MyJsonProtocol._
+import lille1.car3.tpRest.util.MyJsonProtocol._
 import org.apache.commons.net.ftp.FTPFile
 import spray.http.HttpEntity
 import spray.http.HttpResponse
@@ -8,7 +8,7 @@ import spray.http.MediaTypes._
 import spray.json._
 
 /**
-  * Défini l'ensemble des fonctions régulièrements utilisées
+  * Définit l'ensemble des fonctions régulièrements utilisées
   * pour générer une spray.http.HttpResponse de type JSON ou HTML
   *
   * @author Gouzer Willian
@@ -45,7 +45,7 @@ trait HelperFunction extends DefaultJsonProtocol {
     for(f <- files) {
       if(f.isDirectory) {
         array = new Array[String](3)
-        array(0) = "Répertoire"
+        array(0) = "Repertoire"
         array(1) = f.getName()
         array(2) = "http://localhost:8080/list/json"+ workingDirectoryPath +"/"+ f.getName
       }
@@ -76,9 +76,9 @@ trait HelperFunction extends DefaultJsonProtocol {
     **/
   def HTML_ListResponse(workingDirectoryPath: String, files: Array[FTPFile]) : HttpResponse = {
     var responseHTML = new String("<html><head><meta charset=\"UTF-8\"><title>Commande LIST - HTML</title></head>")
-    responseHTML += "<body><h1>Commande LIST FTP - Version HTML</h1><h3>Répertoire courant : "+ workingDirectoryPath +"</h3>"
+    responseHTML += "<body><h1>Commande LIST FTP - Version HTML</h1><h3>Repertoire courant : "+ workingDirectoryPath +"</h3>"
 
-    responseHTML += "<div><p><em>Légende :</em> <span style=\"color: red;\">Dossier</span></p></div>"
+    responseHTML += "<div><p><em>Legende :</em> <span style=\"color: red;\">Dossier</span></p></div>"
     responseHTML += "<div><ul style=\"list-style: none;\">"
 
     for(f <- files) {

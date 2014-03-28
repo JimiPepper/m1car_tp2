@@ -1,7 +1,8 @@
-package lille1.car3.tpRest
+package lille1.car3.tpRest.actor
+
+import lille1.car3.tpRest.util.RoutingService
 
 import java.io.{ ByteArrayInputStream, InputStream, OutputStream, File, FileOutputStream, FileInputStream }
-import java.io.FileNotFoundException
 
 import scala.util.matching.Regex
 
@@ -24,7 +25,7 @@ import directives._
   * @author Gouzer Willian
   * @author Philippon Romain
   **/
-class RoutingActor extends Actor with RoutingService with HelperHtml {
+class RoutingActor extends Actor with RoutingService {
 
   /**
   * Contient l'acteur généré par le serveur Spray via la factory des Acteurs lors du lancement de l'application

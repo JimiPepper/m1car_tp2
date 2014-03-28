@@ -1,0 +1,111 @@
+digraph diagram {
+fontname = "Bitstream Vera Sans"
+fontsize = 8
+
+node [
+     fontname = "Bitstream Vera Sans"
+     fontsize = 8
+     shape = "record"
+]
+
+subgraph clusterLille1Car3TpRestPackage {
+  label = "Package lille1.car3.tpRest"
+
+  subgraph clusterLille1Car3TpRestHelperPackage {
+  label = "Package lille1.car3.tpRest.helper"
+    HelperFunction [
+      style = filled 
+      fillcolor = cadetblue
+      label = "{HelperFunction|+ extract(text: String regex: String idx: Int) : String\l+ JSON_ListResponse(workingDirectoryPath : String files: Array[FTPFile]) : HttpResponse\l+ HTML_ListResponse(workingDirectoryPath: String files: Array[FTPFile]) : HttpResponse\l|}"
+    ]
+
+    HelperHtml [
+      style = filled
+      fillcolor = cadetblue
+      label = "{HelperHtml|+ loginForm : HttpResponse\l+ storeForm : HttpResponse\l+ listNote : HttpResponse\l+ error404Html : HttpResponse\l+ deleteDoneMessage : HttpResponse\l+ storeDoneMessage : HttpResponse\l+ loggedInDoneMessage = HttpResponse|}"
+    ]
+  }
+
+  subgraph clusterLille1Car3TpRestUtilPackage {
+    label = "Package lille1.car3.tpRest.util"
+
+    MyJsonProtocol [
+      style=filled 
+      fillcolor=gold
+    ]
+
+    ListOfArrayStringJsonFormat [
+      style=filled 
+      fillcolor=gold
+      label = "{ListOfArrayStringJsonFormat||+  write(list: List[Array[String]]) : JsArray\l+ read(value: JsValue): List[Array[String]]\l}"
+    ]
+
+    RoutingService [
+      style=filled 
+      fillcolor=cadetblue
+      label = "{RoutingService|+ routing : RequestContext\l|}"
+    ]
+
+    FtpConnexion [
+      style=filled 
+      fillcolor=darkorange
+      label ="{FTPConnexion|+ client : new FTPClient\l|+ toString : String\l+ info : String\l+ connect : Boolean\l+ login : Boolean\l+ list(path: String) : Array[FTPFile]\l+ upload(file: String is: InputStream) : Boolean\l+ download(file: String fos: FileOutputStream) : Boolean\l+ delete(file: String) : Boolean\l}"
+    ]
+  }
+
+  subgraph clusterLille1Car3TpRestHelperPackage {
+    label = "Package lille1.car3.tpRest.actor"
+    RoutingActor [
+      style=filled 
+      fillcolor=darkorange
+      label = "{RoutingActor|+ actorRefFactory : ActorRefFactory\l |+receive : Unit\n}"
+    ]
+  }
+
+  subgraph clusterLille1Car3TpRestRejectionPackage{
+    label = "Package lille1.car3.tpRest.rejection"
+    RejectionHandlerRouting [
+      style=filled
+      fillcolor=cadetblue 
+      label = "{RejectionHandlerRouting|+ myRejectionHandler : RejectionHandler\l|}"
+    ]
+  } 
+
+  subgraph clusterLille1Car3TpRestMainPackage {
+    label = "Package lille1.car3.tpRest.main"
+    Boot [
+      style=filled
+      fillcolor=gold
+      label = "{Boot||+  main(args: Array[String]): Unit \l}"
+    ]
+  }
+ } 
+
+  // Héritage
+  edge [
+    arrowhead = "empty"
+  ]
+
+  Boot -> App
+  RoutingService -> HttpService
+  RoutingActor -> Actor
+  MyJsonProtocol -> DefaultJsonProtocol
+  ListOfArrayStringJsonFormat-> RootJsonFormat
+
+   // Interface
+  edge [
+   arrowhead = "vee" 
+   style = "dashed"
+  ]
+
+  RoutingActor -> RoutingService
+  HelperHtml -> RoutingService 
+  HelperFunction -> RoutingService
+  RejectionHandlerRooting -> RoutingService
+
+  edge [
+    arrowhead = "odiamond"
+  ]
+
+  ListOfArrayStringJsonFormat -> MyJsonProtocol
+}

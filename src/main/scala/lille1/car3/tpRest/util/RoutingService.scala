@@ -1,4 +1,7 @@
-package lille1.car3.tpRest
+package lille1.car3.tpRest.util
+
+import lille1.car3.tpRest.helper._
+import lille1.car3.tpRest.rejection.RejectionHandlerRouting
 
 import java.io.{ ByteArrayInputStream, InputStream, OutputStream, File, FileOutputStream, FileInputStream }
 import java.io.FileNotFoundException
@@ -22,7 +25,7 @@ import directives._
   * @author Gouzer Willian
   * @author Philippon Romain
   **/
-trait RoutingService extends HttpService with HelperHtml with HelperFunction with RejectionHandlerRooting {
+trait RoutingService extends HttpService with HelperHtml with HelperFunction with RejectionHandlerRouting {
   /**
   * Contient le routing de la passerelle FTP
   */
@@ -35,7 +38,7 @@ trait RoutingService extends HttpService with HelperHtml with HelperFunction wit
       val connexion = new FTPConnexion(login_opt, mdp_opt, ip_opt, port_opt)
      
       connexion.connect
-      validate(connexion.login, "Vous devez être authentifié pour accéder à ces fonctionnalités") {
+      validate(connexion.login, "Vous devez être authentifie pour accéder à ces fonctionnalites") {
         setCookie(HttpCookie("ftp_connexion", connexion.info)) {
           complete(loggedInDoneMessage)
         }  
@@ -48,7 +51,7 @@ trait RoutingService extends HttpService with HelperHtml with HelperFunction wit
       val connexion = new FTPConnexion(tab(0), tab(1), tab(2), tab(3).toInt)
 
       connexion.connect
-      validate(connexion.login, "Vous devez être authentifié pour accéder à ces fonctionnalités") {
+      validate(connexion.login, "Vous devez être authentifie pour acceder à ces fonctionnalites") {
         complete(listNote)
       }
     }
@@ -60,7 +63,7 @@ trait RoutingService extends HttpService with HelperHtml with HelperFunction wit
         var connexion = new FTPConnexion(tab(0), tab(1), tab(2), tab(3).toInt)
 
         connexion.connect
-        validate(connexion.login, "Vous devez être authentifié pour accéder à ces fonctionnalités") {
+        validate(connexion.login, "Vous devez être authentifie pour acceder à ces fonctionnalites") {
           connexion.login
           try { 
             var liste_files : Array[FTPFile] = connexion.list("")
@@ -77,7 +80,7 @@ trait RoutingService extends HttpService with HelperHtml with HelperFunction wit
         var connexion = new FTPConnexion(tab(0), tab(1), tab(2), tab(3).toInt)
 
         connexion.connect
-        validate(connexion.login, "Vous devez être authentifié pour accéder à ces fonctionnalités") {
+        validate(connexion.login, "Vous devez etre authentifie pour accéder à ces fonctionnalites") {
           connexion.login
 
           piece_of_route match {
@@ -101,7 +104,7 @@ trait RoutingService extends HttpService with HelperHtml with HelperFunction wit
         var connexion = new FTPConnexion(tab(0), tab(1), tab(2), tab(3).toInt)
 
         connexion.connect
-        validate(connexion.login, "Vous devez être authentifié pour accéder à ces fonctionnalités") {
+        validate(connexion.login, "Vous devez etre authentifie pour acceder à ces fonctionnalites") {
           connexion.login
           try {
             var liste_files : Array[FTPFile] = connexion.list("")
@@ -118,7 +121,7 @@ trait RoutingService extends HttpService with HelperHtml with HelperFunction wit
         var connexion = new FTPConnexion(tab(0), tab(1), tab(2), tab(3).toInt)
 
         connexion.connect
-        validate(connexion.login, "Vous devez être authentifié pour accéder à ces fonctionnalités") {
+        validate(connexion.login, "Vous devez etre authentifie pour accéder à ces fonctionnalites") {
           connexion.login
 
           piece_of_route match {
@@ -141,7 +144,7 @@ trait RoutingService extends HttpService with HelperHtml with HelperFunction wit
       val connexion = new FTPConnexion(tab(0), tab(1), tab(2), tab(3).toInt)
 
       connexion.connect
-      validate(connexion.login, "Vous devez être authentifié pour accéder à ces fonctionnalités") {
+      validate(connexion.login, "Vous devez etre authentifie pour acceder à ces fonctionnalites") {
         connexion.login
 
         piece_of_route match {
@@ -162,15 +165,15 @@ trait RoutingService extends HttpService with HelperHtml with HelperFunction wit
       val connexion = new FTPConnexion(tab(0), tab(1), tab(2), tab(3).toInt)
 
       connexion.connect
-      validate(connexion.login, "Vous devez être authentifié pour accéder à ces fonctionnalités") {
+      validate(connexion.login, "Vous devez etre authentifie pour acceder à ces fonctionnalites") {
         connexion.login
     
         piece_of_route match {
           case head :: tail => connexion.delete(piece_of_route.mkString("/")) match {
-            case true => redirect("http://localhost/delete/"+ piece_of_route.mkString("/"), StatusCodes.MovedPermanently)
+            case true => complete(deleteDoneMessage)
             case false => complete(HttpResponse(status = StatusCodes.InternalServerError, entity = HttpEntity(`text/html`, <html><head><title></title></head><body><p>Veuillez retentez l'opération celle-ci d'échouer</p></body></html>.toString)))
           }
-          case List() => complete(HttpResponse(status = StatusCodes.NoContent, entity = HttpEntity(`text/html`, <html><head><title></title></head><body><p>Le fichier que vous vouliez supprimer est introuvable</p></body></html>.toString)))
+          case List() => complete(HttpResponse(status = StatusCodes.InternalServerError, entity = HttpEntity(`text/html`, <html><head><title></title></head><body><p>Le fichier que vous vouliez supprimer est introuvable</p></body></html>.toString)))
         }
       }
     }
@@ -181,7 +184,7 @@ trait RoutingService extends HttpService with HelperHtml with HelperFunction wit
       val connexion = new FTPConnexion(tab(0), tab(1), tab(2), tab(3).toInt)
 
       connexion.connect
-      validate(connexion.login, "Vous devez être authentifié pour accéder à ces fonctionnalités") {
+      validate(connexion.login, "Vous devez etre authentifie pour acceder à ces fonctionnalites") {
         connexion.login
         complete(storeForm)
       }
@@ -193,7 +196,7 @@ trait RoutingService extends HttpService with HelperHtml with HelperFunction wit
       val connexion = new FTPConnexion(tab(0), tab(1), tab(2), tab(3).toInt)
 
       connexion.connect
-      validate(connexion.login, "Vous devez être authentifié pour accéder à ces fonctionnalités") {
+      validate(connexion.login, "Vous devez etre authentifie pour acceder à ces fonctionnalites") {
         connexion.login
         entity(as[MultipartFormData]) { formData =>
           val filename = extract(formData.toString, """(filename)(=)([-_.a-zA-Z0-9]+[.]+[a-zA-Z0-9]{2,})""", 3)
@@ -204,8 +207,7 @@ trait RoutingService extends HttpService with HelperHtml with HelperFunction wit
               val fos = new FileOutputStream(temp_file)
               try { fos.write(file) }
               catch {
-                case e : java.io.IOException => complete(HttpResponse(status =StatusCodes.InternalServerError, entity = HttpEntity(`text/plain`, "L'extraction de " + filename +" à échoué")))
-                  
+                case e : java.io.IOException => complete(HttpResponse(status = StatusCodes.InternalServerError, entity = HttpEntity(`text/plain`, "L'extraction de " + filename +" a echoue")))   
               }
               finally { fos.close() }
 
@@ -224,7 +226,7 @@ trait RoutingService extends HttpService with HelperHtml with HelperFunction wit
   (path("logout") & get)
   {
       deleteCookie("ftp_connexion"){
-        complete("Vous êtes déconnecté")
+        complete("Vous etes deconnecte")
       }
   }
   // fin du routing
